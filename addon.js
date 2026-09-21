@@ -189,7 +189,7 @@ document.getElementById('form-create-user').addEventListener('submit', async (e)
 
         if (profileError) throw profileError;
 
-        alert(`✅ Entry Profil Berhasil Dibuat!\n\n️ LANGKAH TERAKHIR (WAJIB):\nKarena keamanan browser, Anda harus membuat User Auth secara manual via SQL Editor agar bisa login.\n\nCopy script ini ke SQL Editor:\n\nINSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token) VALUES ('00000000-0000-0000-0000-000000000000', '${tempId}', 'authenticated', 'authenticated', '${email}', crypt('${password}', gen_salt('bf')), NOW(), '{\"provider\":\"email\",\"providers\":[\"email\"]}', '{\"nama_lengkap\":\"${nama}\"}', NOW(), NOW(), '', '', '', '');\n\nSetelah itu, approve user ini di dashboard!`);
+        alert(`✅ Entry Profil Berhasil Dibuat!\n\n⚠️ LANGKAH TERAKHIR (WAJIB):\nKarena keamanan browser, Anda harus membuat User Auth secara manual via SQL Editor agar bisa login.\n\nCopy script ini ke SQL Editor:\n\nINSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token) VALUES ('00000000-0000-0000-0000-000000000000', '${tempId}', 'authenticated', 'authenticated', '${email}', crypt('${password}', gen_salt('bf')), NOW(), '{\"provider\":\"email\",\"providers\":[\"email\"]}', '{\"nama_lengkap\":\"${nama}\"}', NOW(), NOW(), '', '', '', '');\n\nSetelah itu, approve user ini di dashboard!`);
         
         toggleModal('modal-create-user');
         e.target.reset();
@@ -504,7 +504,7 @@ async function askFaq(key) {
     }, 600);
 }
 
-// --- EXPORT & IMPORT CSV ---
+// --- EXPORT & IMPORT CSV (FIXED VERSION) ---
 function exportOfftakerCSV(){
     let csv = '\uFEFFNama Sampah,Harga Per Kg\n'; 
     jenisSampahList.forEach(j=>{
@@ -520,9 +520,72 @@ function exportOfftakerCSV(){
 }
 
 async function handleImportOfftaker(input){
-    const f=input.files[0];if(!f)return;const t=await f.text();const l=t.split('\n').slice(1);let c=0;
-    for(let ln of l){const[n,h]=ln.split(',');if(n&&h){const hv=parseFloat(h.replace(/[^0-9.-]+/g,""));const j=jenisSampahList.find(x=>x.nama_sampah.toLowerCase().includes(n.trim().toLowerCase()));if(j&&!isNaN(hv)){await supabaseClient.from('harga_offtaker').upsert({jenis_sampah_id:j.id,bank_sampah_id:null,harga_per_kg:hv},{onConflict:'jenis_sampah_id, bank_sampah_id'});c++;}}}
-    alert(`Import ${c} data sukses!`);loadTableHargaOfftaker();input.value='';
+    const f = input.files[0];
+    if(!f) return;
+    
+    try {
+        const t = await f.text();
+        const lines = t.split('\n').filter(line => line.trim() !== ''); // Hapus baris kosong
+        let successCount = 0;
+        let errorCount = 0;
+        
+        // Lewati header (baris pertama)
+        for(let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if(!line) continue;
+            
+            // Handle CSV yang pakai koma di dalam kutip (misal: "Sampah, Jenis", 5000)
+            const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+            if(!matches || matches.length < 2) {
+                errorCount++;
+                continue;
+            }
+            
+            let namaSampah = matches[0].replace(/"/g, '').trim();
+            let hargaStr = matches[1].replace(/"/g, '').replace(/[^\d.-]/g, '').trim();
+            let harga = parseFloat(hargaStr);
+            
+            if(isNaN(harga)) {
+                errorCount++;
+                continue;
+            }
+            
+            // Cari ID jenis sampah yang cocok (case insensitive)
+            const js = jenisSampahList.find(x => 
+                x.nama_sampah.toLowerCase() === namaSampah.toLowerCase() ||
+                x.nama_sampah.toLowerCase().includes(namaSampah.toLowerCase()) ||
+                namaSampah.toLowerCase().includes(x.nama_sampah.toLowerCase())
+            );
+            
+            if(js) {
+                const { error } = await supabaseClient
+                    .from('harga_offtaker')
+                    .upsert(
+                        { 
+                            jenis_sampah_id: js.id, 
+                            bank_sampah_id: null, 
+                            harga_per_kg: harga 
+                        },
+                        { onConflict: 'jenis_sampah_id, bank_sampah_id' }
+                    );
+                    
+                if(!error) successCount++;
+                else errorCount++;
+            } else {
+                errorCount++; // Nama sampah tidak ditemukan di master data
+            }
+        }
+        
+        let msg = `Import selesai!\n✅ Berhasil: ${successCount} data\n❌ Gagal/Skip: ${errorCount} data`;
+        if(errorCount > 0) msg += '\n\n(Cek apakah nama sampah di CSV sama persis dengan Master Data)';
+        
+        alert(msg);
+        loadTableHargaOfftaker(); // Refresh tabel
+        input.value = ''; // Reset input file
+        
+    } catch(err) {
+        alert('Error saat memproses file: ' + err.message);
+    }
 }
 
 function toggleModal(id){document.getElementById(id).classList.toggle('hidden-section');}
