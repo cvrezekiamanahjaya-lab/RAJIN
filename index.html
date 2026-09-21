@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAJIN - Rezeki Amanah Jaya Indonesia</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Font Awesome untuk Ikon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 4px; }
+        
+        /* Animasi Chat */
+        .chat-enter { animation: slideUp 0.3s ease-out forwards; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .hidden-section { display: none; }
+        .active-section { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <!-- ================= LOGIN PAGE ================= -->
+    <div id="login-page" class="flex-grow flex items-center justify-center p-4 bg-gradient-to-br from-emerald-600 to-teal-800">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md chat-enter">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mb-4">
+                    <i class="fas fa-recycle text-3xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-900 tracking-tight">RAJIN</h1>
+                <p class="text-sm text-gray-500 mt-1">Rezeki Amanah Jaya Indonesia</p>
+                <p class="text-xs text-emerald-600 font-semibold mt-2">Platform Bank Sampah Digital</p>
+            </div>
+
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="email" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" placeholder="admin@rajin.id">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" id="password" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg transition duration-200 shadow-lg transform hover:-translate-y-0.5">
+                    Masuk ke Dashboard
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center text-xs text-gray-400">
+                <p>Belum punya akun? Hubungi Admin RAJIN.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MAIN APP (Hidden by default) ================= -->
+    <div id="app-container" class="hidden-section flex-grow flex flex-col">
+        
+        <!-- Navbar -->
+        <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-30">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex items-center">
+                        <i class="fas fa-recycle text-emerald-600 text-2xl mr-3"></i>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900 leading-none">RAJIN</h1>
+                            <span class="text-[10px] text-gray-500 uppercase tracking-wider">Rezeki Amanah Jaya Indonesia</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="hidden md:block text-right">
+                            <p id="user-name" class="text-sm font-medium text-gray-900">User Name</p>
+                            <p id="user-role" class="text-xs text-emerald-600 font-semibold capitalize">Role</p>
+                        </div>
+                        <button onclick="logout()" class="text-gray-500 hover:text-red-600 transition p-2 rounded-full hover:bg-red-50">
+                            <i class="fas fa-sign-out-alt text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Content Area -->
+        <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+            
+            <!-- ADMIN DASHBOARD -->
+            <div id="admin-dashboard" class="hidden-section space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-emerald-500">
+                        <p class="text-sm text-gray-500">Total Bank Sampah</p>
+                        <h3 class="text-2xl font-bold text-gray-900" id="stat-total-bs">0</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
+                        <p class="text-sm text-gray-500">Total Transaksi Hari Ini</p>
+                        <h3 class="text-2xl font-bold text-gray-900" id="stat-transaksi-hari">0</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-500">
+                        <p class="text-sm text-gray-500">Total Penjualan ke Offtaker</p>
+                        <h3 class="text-2xl font-bold text-gray-900" id="stat-penjualan">Rp 0</h3>
+                    </div>
+                </div>
+
+                <!-- Tab Navigation -->
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex space-x-8">
+                        <button onclick="switchAdminTab('bs')" class="admin-tab active-tab border-emerald-500 text-emerald-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Kelola Bank Sampah</button>
+                        <button onclick="switchAdminTab('harga')" class="admin-tab border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Harga Offtaker & Import</button>
+                        <button onclick="switchAdminTab('users')" class="admin-tab border-transparent text-gray-500 hover:text-gray-700 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Manajemen User</button>
+                    </nav>
+                </div>
+
+                <!-- Tab Content: Bank Sampah -->
+                <div id="tab-bs" class="admin-content bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-gray-900">Daftar Bank Sampah</h3>
+                        <button onclick="toggleModal('modal-add-bs')" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700"><i class="fas fa-plus mr-2"></i>Tambah Baru</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Alamat</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No HP</th></tr></thead>
+                            <tbody id="table-bs-body" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Harga Offtaker -->
+                <div id="tab-harga" class="admin-content hidden-section bg-white rounded-xl shadow-sm p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-gray-900">Master Harga Offtaker (Layer 1)</h3>
+                        <div class="flex space-x-2">
+                            <label class="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 flex items-center">
+                                <i class="fas fa-file-upload mr-2"></i> Import CSV
+                                <input type="file" id="csv-import-offtaker" accept=".csv" class="hidden" onchange="handleImportOfftaker(this)">
+                            </label>
+                            <button onclick="exportOfftakerCSV()" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700"><i class="fas fa-download mr-2"></i>Export</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto max-h-96">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50 sticky top-0"><tr><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jenis Sampah</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Harga Default (Rp/Kg)</th><th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aksi</th></tr></thead>
+                            <tbody id="table-offtaker-body" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PENGURUS DASHBOARD -->
+            <div id="pengurus-dashboard" class="hidden-section space-y-6">
+                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-6 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold text-emerald-900" id="pengurus-nama-bs">Bank Sampah Saya</h2>
+                        <p class="text-sm text-emerald-700">Kelola transaksi dan harga nasabah</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-emerald-600 uppercase font-bold">Saldo Tabungan Nasabah</p>
+                        <h3 class="text-2xl font-bold text-emerald-900" id="pengurus-total-tabungan">Rp 0</h3>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Form Input Transaksi -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2"><i class="fas fa-hand-holding-usd mr-2 text-emerald-600"></i>Input Setor Sampah</h3>
+                        <form id="form-transaksi" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nasabah</label>
+                                <select id="trx-nasabah" class="w-full border rounded-lg p-2 text-sm bg-gray-50"></select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Jenis Sampah</label>
+                                    <select id="trx-jenis" class="w-full border rounded-lg p-2 text-sm bg-gray-50" onchange="updateTrxPreview()"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Berat / Jumlah (<span id="trx-satuan-label">Kg</span>)</label>
+                                    <input type="number" id="trx-berat" step="0.01" class="w-full border rounded-lg p-2 text-sm" oninput="updateTrxPreview()">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Kategori</label>
+                                    <select id="trx-kategori" class="w-full border rounded-lg p-2 text-sm">
+                                        <option value="beli">Beli (Uang Masuk Kas)</option>
+                                        <option value="sedekah">Sedekah (Uang Sosial)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Status Bayar</label>
+                                    <select id="trx-status" class="w-full border rounded-lg p-2 text-sm">
+                                        <option value="ditabung">Ditabung</option>
+                                        <option value="dibayar">Langsung Dibayar</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Preview Harga -->
+                            <div class="bg-gray-100 p-3 rounded-lg flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Estimasi Total:</span>
+                                <span class="text-lg font-bold text-emerald-700" id="trx-preview-total">Rp 0</span>
+                            </div>
+
+                            <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-2 rounded-lg hover:bg-emerald-700 transition">Simpan Transaksi</button>
+                        </form>
+                    </div>
+
+                    <!-- Manajemen Harga Nasabah -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2"><i class="fas fa-tags mr-2 text-blue-600"></i>Atur Harga ke Nasabah</h3>
+                        <div class="mb-4 p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
+                            <i class="fas fa-info-circle mr-1"></i> Mode default: <b>Persen (Turun 30%)</b> dari harga offtaker.
+                        </div>
+                        <div class="overflow-y-auto max-h-80 pr-2">
+                            <table class="min-w-full text-sm">
+                                <thead class="bg-gray-50 sticky top-0"><tr><th class="py-2 text-left">Sampah</th><th class="py-2 text-left">Mode</th><th class="py-2 text-right">Harga Final</th></tr></thead>
+                                <tbody id="table-harga-nasabah-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NASABAH DASHBOARD -->
+            <div id="nasabah-dashboard" class="hidden-section space-y-6">
+                <div class="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-8 text-white shadow-lg relative overflow-hidden">
+                    <div class="relative z-10">
+                        <p class="text-emerald-100 text-sm font-medium mb-1">Selamat Datang,</p>
+                        <h2 class="text-3xl font-bold mb-6" id="nasabah-nama">Nama Nasabah</h2>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                                <p class="text-xs text-emerald-100 uppercase">Saldo Ditabung</p>
+                                <h3 class="text-2xl font-bold" id="nasabah-saldo-tabung">Rp 0</h3>
+                            </div>
+                            <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                                <p class="text-xs text-emerald-100 uppercase">Total Setoran</p>
+                                <h3 class="text-2xl font-bold" id="nasabah-total-setor">0 Kg</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <i class="fas fa-leaf absolute -right-4 -bottom-4 text-9xl text-white/10 rotate-12"></i>
+                </div>
+
+                <!-- Notifikasi Harga Terbaru -->
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg">
+                    <div class="flex">
+                        <div class="flex-shrink-0"><i class="fas fa-bell text-yellow-400"></i></div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-yellow-800">Update Harga Terbaru</h3>
+                            <p class="text-sm text-yellow-700 mt-1" id="nasabah-harga-update">Plastik HDPE sekarang Rp 5.200/kg</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Riwayat Transaksi -->
+                <div class="bg-white rounded-xl shadow-sm p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-4">Riwayat Setoran Saya</h3>
+                    <div class="space-y-3" id="nasabah-riwayat-list">
+                        <!-- Item riwayat akan muncul di sini -->
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-white border-t border-gray-200 py-6 mt-auto">
+            <div class="max-w-7xl mx-auto px-4 text-center">
+                <p class="text-sm text-gray-500">&copy; 2026 <span class="font-bold text-emerald-600">RAJIN</span> - Rezeki Amanah Jaya Indonesia. All rights reserved.</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ================= CHAT HELPER FLOATING BUTTON ================= -->
+    <div class="fixed bottom-6 right-6 z-50">
+        <!-- Chat Window -->
+        <div id="chat-window" class="hidden-section absolute bottom-16 right-0 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden chat-enter origin-bottom-right">
+            <div class="bg-emerald-600 p-4 text-white flex justify-between items-center">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center mr-2"><i class="fas fa-robot"></i></div>
+                    <div>
+                        <h4 class="font-bold text-sm">Asisten RAJIN</h4>
+                        <p class="text-[10px] text-emerald-100">Online • Siap membantu</p>
+                    </div>
+                </div>
+                <button onclick="toggleChat()" class="text-white/80 hover:text-white"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="p-4 h-80 overflow-y-auto bg-gray-50 space-y-3" id="chat-messages">
+                <div class="flex items-start">
+                    <div class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center mr-2 flex-shrink-0"><i class="fas fa-robot text-emerald-600 text-xs"></i></div>
+                    <div class="bg-white p-3 rounded-lg rounded-tl-none shadow-sm text-sm text-gray-700 max-w-[85%]">
+                        Halo! Ada yang bisa saya bantu terkait aplikasi RAJIN? 👋
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="p-3 bg-white border-t border-gray-100">
+                <p class="text-[10px] text-gray-400 uppercase font-bold mb-2">Pertanyaan Cepat:</p>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="askFaq('tutorial_setor')" class="text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full hover:bg-emerald-100 border border-emerald-200 transition">📚 Cara setor?</button>
+                    <button onclick="askFaq('update_harga')" class="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full hover:bg-blue-100 border border-blue-200 transition">💰 Cek Harga</button>
+                    <button onclick="askFaq('import_csv')" class="text-xs bg-purple-50 text-purple-700 px-3 py-1.5 rounded-full hover:bg-purple-100 border border-purple-200 transition">📥 Import CSV</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toggle Button -->
+        <button onclick="toggleChat()" class="bg-emerald-600 hover:bg-emerald-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition transform hover:scale-110">
+            <i class="fas fa-comment-dots text-2xl"></i>
+        </button>
+    </div>
+
+    <!-- ================= MODALS ================= -->
+    <!-- Modal Tambah Bank Sampah -->
+    <div id="modal-add-bs" class="hidden-section fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 chat-enter">
+            <h3 class="text-lg font-bold mb-4">Tambah Bank Sampah Baru</h3>
+            <form id="form-add-bs" class="space-y-4">
+                <input type="text" id="new-bs-nama" placeholder="Nama Bank Sampah" required class="w-full border rounded-lg p-2">
+                <input type="text" id="new-bs-alamat" placeholder="Alamat Lengkap" class="w-full border rounded-lg p-2">
+                <input type="text" id="new-bs-hp" placeholder="No HP Pengurus" class="w-full border rounded-lg p-2">
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="toggleModal('modal-add-bs')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
+    <script>
+        // ==========================================
+        // KONFIGURASI SUPABASE (GANTI DENGAN PUNYA KAMU!)
+        // ==========================================
+        const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY_HERE';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // State Global
+        let currentUser = null;
+        let currentProfile = null;
+        let jenisSampahList = [];
+        let hargaOfftakerMap = {}; // { jenis_sampah_id: harga }
+
+        // ==========================================
+        // AUTHENTICATION & INITIALIZATION
+        // ==========================================
+        async function initApp() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                await handleLoginSuccess(session.user);
+            } else {
+                showSection('login-page');
+            }
+        }
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            if (error) {
+                alert('Login Gagal: ' + error.message);
+            } else {
+                await handleLoginSuccess(data.user);
+            }
+        });
+
+        async function handleLoginSuccess(user) {
+            currentUser = user;
+            
+            // Ambil Profile & Role
+            const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+            currentProfile = profile;
+
+            if (!profile) {
+                alert('Error: Profile tidak ditemukan. Hubungi Admin.');
+                logout();
+                return;
+            }
+
+            // Update UI Navbar
+            document.getElementById('user-name').textContent = profile.nama_lengkap;
+            document.getElementById('user-role').textContent = profile.role;
+
+            // Load Data Master (Jenis Sampah & Harga Offtaker)
+            await loadMasterData();
+
+            // Redirect sesuai Role
+            showSection('app-container');
+            if (profile.role === 'admin') await loadAdminDashboard();
+            else if (profile.role === 'pengurus') await loadPengurusDashboard();
+            else if (profile.role === 'nasabah') await loadNasabahDashboard();
+        }
+
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.reload();
+        }
+
+        function showSection(id) {
+            ['login-page', 'app-container'].forEach(sec => {
+                document.getElementById(sec).classList.add('hidden-section');
+                document.getElementById(sec).classList.remove('active-section');
+            });
+            document.getElementById(id).classList.remove('hidden-section');
+            document.getElementById(id).classList.add('active-section');
+        }
+
+        // ==========================================
+        // DATA LOADING HELPERS
+        // ==========================================
+        async function loadMasterData() {
+            // Load Jenis Sampah
+            const { data: js } = await supabase.from('jenis_sampah').select('*').order('nama_sampah');
+            jenisSampahList = js || [];
+
+            // Load Harga Offtaker Default (bank_sampah_id IS NULL)
+            const { data: ho } = await supabase.from('harga_offtaker').select('jenis_sampah_id, harga_per_kg').is('bank_sampah_id', null);
+            hargaOfftakerMap = {};
+            (ho || []).forEach(h => hargaOfftakerMap[h.jenis_sampah_id] = h.harga_per_kg);
+        }
+
+        function formatRupiah(angka) {
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+        }
+
+        // ==========================================
+        // ADMIN DASHBOARD LOGIC
+        // ==========================================
+        async function loadAdminDashboard() {
+            document.getElementById('admin-dashboard').classList.remove('hidden-section');
+            
+            // Stats Dummy (Bisa diquery real nanti)
+            const { count: countBs } = await supabase.from('bank_sampah').select('*', { count: 'exact', head: true });
+            document.getElementById('stat-total-bs').textContent = countBs || 0;
+            
+            loadTableBankSampah();
+            loadTableHargaOfftaker();
+        }
+
+        function switchAdminTab(tabName) {
+            document.querySelectorAll('.admin-tab').forEach(t => {
+                t.classList.remove('border-emerald-500', 'text-emerald-600', 'active-tab');
+                t.classList.add('border-transparent', 'text-gray-500');
+            });
+            event.target.classList.add('border-emerald-500', 'text-emerald-600', 'active-tab');
+            event.target.classList.remove('border-transparent', 'text-gray-500');
+
+            document.querySelectorAll('.admin-content').forEach(c => c.classList.add('hidden-section'));
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden-section');
+        }
+
+        async function loadTableBankSampah() {
+            const { data } = await supabase.from('bank_sampah').select('*').order('created_at', { ascending: false });
+            const tbody = document.getElementById('table-bs-body');
+            tbody.innerHTML = '';
+            (data || []).forEach(bs => {
+                tbody.innerHTML += `<tr><td class="px-6 py-4 font-medium">${bs.nama_bank}</td><td class="px-6 py-4 text-gray-500">${bs.alamat || '-'}</td><td class="px-6 py-4 text-gray-500">${bs.no_hp || '-'}</td></tr>`;
+            });
+        }
+
+        async function loadTableHargaOfftaker() {
+            // Join dengan jenis_sampah
+            const { data } = await supabase.from('harga_offtaker').select('*, jenis_sampah(nama_sampah)').is('bank_sampah_id', null).order('jenis_sampah(nama_sampah)');
+            const tbody = document.getElementById('table-offtaker-body');
+            tbody.innerHTML = '';
+            (data || []).forEach(h => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="px-6 py-3 font-medium text-gray-900">${h.jenis_sampah?.nama_sampah}</td>
+                        <td class="px-6 py-3 text-emerald-600 font-bold">${formatRupiah(h.harga_per_kg)}</td>
+                        <td class="px-6 py-3"><button class="text-blue-600 hover:underline text-xs">Edit</button></td>
+                    </tr>`;
+            });
+        }
+
+        // Fitur Import CSV Offtaker
+        async function handleImportOfftaker(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const text = await file.text();
+            const lines = text.split('\n').slice(1); // Skip header
+            
+            let successCount = 0;
+            for (let line of lines) {
+                const [nama, hargaStr] = line.split(',');
+                if (nama && hargaStr) {
+                    const harga = parseFloat(hargaStr.replace(/[^0-9.-]+/g,""));
+                    // Cari ID jenis sampah berdasarkan nama
+                    const js = jenisSampahList.find(j => j.nama_sampah.toLowerCase().includes(nama.trim().toLowerCase()));
+                    if (js && !isNaN(harga)) {
+                        await supabase.from('harga_offtaker').upsert({ 
+                            jenis_sampah_id: js.id, 
+                            bank_sampah_id: null, 
+                            harga_per_kg: harga 
+                        }, { onConflict: 'jenis_sampah_id, bank_sampah_id' });
+                        successCount++;
+                    }
+                }
+            }
+            alert(`Berhasil import ${successCount} data harga!`);
+            loadTableHargaOfftaker();
+            input.value = ''; // Reset input
+        }
+
+        function exportOfftakerCSV() {
+            let csv = 'Nama Sampah,Harga Per Kg\n';
+            jenisSampahList.forEach(js => {
+                const harga = hargaOfftakerMap[js.id] || 0;
+                csv += `"${js.nama_sampah}",${harga}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'harga_offtaker_rajin.csv';
+            a.click();
+        }
+
+        // ==========================================
+        // PENGURUS DASHBOARD LOGIC
+        // ==========================================
+        async function loadPengurusDashboard() {
+            document.getElementById('pengurus-dashboard').classList.remove('hidden-section');
+            
+            // Info Bank Sampah
+            const { data: bs } = await supabase.from('bank_sampah').select('*').eq('id', currentProfile.bank_sampah_id).single();
+            document.getElementById('pengurus-nama-bs').textContent = bs?.nama_bank || 'Bank Sampah Saya';
+
+            // Load Dropdown Nasabah
+            const { data: nasabah } = await supabase.from('nasabah').select('*').eq('bank_sampah_id', currentProfile.bank_sampah_id).order('nama');
+            const selectNasabah = document.getElementById('trx-nasabah');
+            selectNasabah.innerHTML = '<option value="">-- Pilih Nasabah --</option>';
+            (nasabah || []).forEach(n => {
+                selectNasabah.innerHTML += `<option value="${n.id}">${n.nama}</option>`;
+            });
+
+            // Load Dropdown Jenis Sampah & Hitung Harga Nasabah
+            const selectJenis = document.getElementById('trx-jenis');
+            selectJenis.innerHTML = '<option value="">-- Pilih Sampah --</option>';
+            
+            // Ambil harga nasabah khusus untuk bank sampah ini
+            const { data: hn } = await supabase.from('harga_nasabah').select('*').eq('bank_sampah_id', currentProfile.bank_sampah_id);
+            const hargaNasabahMap = {};
+            (hn || []).forEach(h => hargaNasabahMap[h.jenis_sampah_id] = h);
+
+            const tbodyHarga = document.getElementById('table-harga-nasabah-body');
+            tbodyHarga.innerHTML = '';
+
+            jenisSampahList.forEach(js => {
+                const hargaDasar = hargaOfftakerMap[js.id] || 0;
+                const setting = hargaNasabahMap[js.id];
+                
+                let finalPrice = 0;
+                let modeLabel = 'Persen (30%)';
+                
+                if (setting) {
+                    if (setting.mode_harga === 'custom') {
+                        finalPrice = setting.harga_custom;
+                        modeLabel = 'Custom';
+                    } else if (setting.mode_harga === 'offtaker') {
+                        finalPrice = hargaDasar;
+                        modeLabel = 'Ikut Offtaker';
+                    } else {
+                        finalPrice = hargaDasar * (1 - (setting.persentase / 100));
+                        modeLabel = `Persen (${setting.persentase}%)`;
+                    }
+                } else {
+                    // Default 30% turun
+                    finalPrice = hargaDasar * 0.7;
+                }
+
+                // Simpan di dataset option buat preview realtime
+                const opt = document.createElement('option');
+                opt.value = js.id;
+                opt.textContent = js.nama_sampah;
+                opt.dataset.harga = finalPrice;
+                opt.dataset.satuan = js.satuan;
+                selectJenis.appendChild(opt);
+
+                // Render tabel pengaturan harga
+                tbodyHarga.innerHTML += `
+                    <tr class="border-b last:border-0">
+                        <td class="py-2 text-gray-700">${js.nama_sampah}</td>
+                        <td class="py-2 text-xs text-gray-500">${modeLabel}</td>
+                        <td class="py-2 text-right font-bold text-emerald-600">${formatRupiah(finalPrice)}</td>
+                    </tr>`;
+            });
+        }
+
+        function updateTrxPreview() {
+            const select = document.getElementById('trx-jenis');
+            const berat = parseFloat(document.getElementById('trx-berat').value) || 0;
+            const selectedOpt = select.options[select.selectedIndex];
+            
+            if (selectedOpt && selectedOpt.value) {
+                const harga = parseFloat(selectedOpt.dataset.harga) || 0;
+                const satuan = selectedOpt.dataset.satuan || 'Kg';
+                document.getElementById('trx-satuan-label').textContent = satuan;
+                document.getElementById('trx-preview-total').textContent = formatRupiah(harga * berat);
+            } else {
+                document.getElementById('trx-preview-total').textContent = 'Rp 0';
+            }
+        }
+
+        document.getElementById('form-transaksi').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nasabahId = document.getElementById('trx-nasabah').value;
+            const jenisId = document.getElementById('trx-jenis').value;
+            const berat = parseFloat(document.getElementById('trx-berat').value);
+            
+            if (!nasabahId || !jenisId || !berat) {
+                alert('Mohon lengkapi semua field!');
+                return;
+            }
+
+            const select = document.getElementById('trx-jenis');
+            const harga = parseFloat(select.options[select.selectedIndex].dataset.harga);
+            const total = harga * berat;
+
+            const { error } = await supabase.from('transaksi').insert({
+                bank_sampah_id: currentProfile.bank_sampah_id,
+                nasabah_id: nasabahId,
+                jenis_sampah_id: jenisId,
+                berat_kg: berat,
+                harga_saat_transaksi: harga,
+                total_harga: total,
+                kategori_transaksi: document.getElementById('trx-kategori').value,
+                status_bayar: document.getElementById('trx-status').value
+            });
+
+            if (error) {
+                alert('Gagal simpan: ' + error.message);
+            } else {
+                alert('Transaksi berhasil disimpan!');
+                e.target.reset();
+                document.getElementById('trx-preview-total').textContent = 'Rp 0';
+            }
+        });
+
+        // ==========================================
+        // NASABAH DASHBOARD LOGIC
+        // ==========================================
+        async function loadNasabahDashboard() {
+            document.getElementById('nasabah-dashboard').classList.remove('hidden-section');
+            
+            // Ambil data nasabah milik user ini
+            const { data: nData } = await supabase.from('nasabah').select('*').eq('id', currentProfile.id).single();
+            if (nData) {
+                document.getElementById('nasabah-nama').textContent = nData.nama;
+                document.getElementById('nasabah-saldo-tabung').textContent = formatRupiah(nData.saldo_tabungan || 0);
+            }
+
+            // Load Riwayat
+            const { data: trx } = await supabase.from('transaksi').select('*, jenis_sampah(nama_sampah, satuan)').eq('nasabah_id', currentProfile.id).order('tanggal_transaksi', { ascending: false });
+            
+            const listContainer = document.getElementById('nasabah-riwayat-list');
+            listContainer.innerHTML = '';
+            let totalBerat = 0;
+
+            (trx || []).forEach(t => {
+                totalBerat += t.berat_kg;
+                const badgeColor = t.status_bayar === 'dibayar' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+                const badgeText = t.status_bayar === 'dibayar' ? 'Dibayar' : 'Ditabung';
+                
+                listContainer.innerHTML += `
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <div>
+                            <p class="font-bold text-gray-900">${t.jenis_sampah?.nama_sampah}</p>
+                            <p class="text-xs text-gray-500">${new Date(t.tanggal_transaksi).toLocaleDateString('id-ID')} • ${t.berat_kg} ${t.jenis_sampah?.satuan}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-emerald-600">${formatRupiah(t.total_harga)}</p>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full ${badgeColor}">${badgeText}</span>
+                        </div>
+                    </div>`;
+            });
+            
+            document.getElementById('nasabah-total-setor').textContent = totalBerat.toFixed(1) + ' Kg';
+
+            // Notifikasi Harga (Ambil 3 update terakhir)
+            const { data: updates } = await supabase.from('harga_nasabah').select('*, jenis_sampah(nama_sampah)').eq('bank_sampah_id', currentProfile.bank_sampah_id).order('updated_at', { ascending: false }).limit(3);
+            if (updates && updates.length > 0) {
+                const txt = updates.map(u => `${u.jenis_sampah?.nama_sampah} diupdate menjadi mode ${u.mode_harga}`).join(', ');
+                document.getElementById('nasabah-harga-update').textContent = txt;
+            }
+        }
+
+        // ==========================================
+        // CHAT HELPER LOGIC
+        // ==========================================
+        function toggleChat() {
+            const chat = document.getElementById('chat-window');
+            chat.classList.toggle('hidden-section');
+        }
+
+        function addChatMessage(text, isUser = false) {
+            const container = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = `flex items-start ${isUser ? 'flex-row-reverse' : ''}`;
+            
+            const icon = isUser ? '<i class="fas fa-user text-blue-600 text-xs"></i>' : '<i class="fas fa-robot text-emerald-600 text-xs"></i>';
+            const bgIcon = isUser ? 'bg-blue-100' : 'bg-emerald-100';
+            const bgBubble = isUser ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-gray-700 rounded-tl-none shadow-sm';
+
+            div.innerHTML = `
+                <div class="w-8 h-8 ${bgIcon} rounded-full flex items-center justify-center ${isUser ? 'ml-2' : 'mr-2'} flex-shrink-0">${icon}</div>
+                <div class="${bgBubble} p-3 rounded-lg text-sm max-w-[85%]">${text}</div>
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        const faqDatabase = {
+            'tutorial_setor': 'Untuk setor sampah:<br>1. Login sebagai Pengurus/Nasabah.<br>2. Pilih jenis sampah & input berat.<br>3. Pilih status "Dibayar" atau "Ditabung".<br>4. Klik Simpan.',
+            'update_harga': 'Sedang mengecek harga terbaru dari database...',
+            'import_csv': 'Fitur Import CSV hanya untuk Admin & Pengurus.<br>Format: <code>Nama Sampah,Harga</code>. Pastikan nama sampah sama persis dengan master data.'
+        };
+
+        async function askFaq(key) {
+            // Tampilkan pertanyaan user
+            const questions = {
+                'tutorial_setor': 'Bagaimana cara setor sampah?',
+                'update_harga': 'Berapa harga plastik/kardus hari ini?',
+                'import_csv': 'Bagaimana cara import CSV?'
+            };
+            addChatMessage(questions[key], true);
+
+            // Delay sedikit biar kayak mikir
+            setTimeout(async () => {
+                if (key === 'update_harga') {
+                    // Query real-time ke DB
+                    let msg = 'Harga Offtaker Default saat ini:<br>';
+                    // Ambil 5 sampah populer aja biar nggak panjang
+                    const popular = ['PLASTIK PUTIH (PP)', 'KARDUS', 'BESI', 'ALUMINIUM PANCI', 'BOTOL BELING'];
+                    
+                    for (let nama of popular) {
+                        const js = jenisSampahList.find(j => j.nama_sampah === nama);
+                        if (js && hargaOfftakerMap[js.id]) {
+                            msg += `• ${nama}: <b>${formatRupiah(hargaOfftakerMap[js.id])}</b><br>`;
+                        }
+                    }
+                    msg += '<br><i class="text-xs text-gray-400">*Harga bisa berbeda per Bank Sampah</i>';
+                    addChatMessage(msg);
+                } else {
+                    addChatMessage(faqDatabase[key]);
+                }
+            }, 600);
+        }
+
+        // Modal Helper
+        function toggleModal(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('hidden-section');
+        }
+
+        // Init App on Load
+        window.addEventListener('DOMContentLoaded', initApp);
+
+    </script>
+</body>
+</html>
