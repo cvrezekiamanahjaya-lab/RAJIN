@@ -121,12 +121,28 @@
                     <div class="overflow-x-auto max-h-[500px] rounded-lg border border-gray-200"><table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50 sticky top-0"><tr><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Jenis Sampah</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Harga Default</th></tr></thead><tbody id="table-offtaker-body" class="bg-white divide-y divide-gray-200 text-sm"></tbody></table></div>
                 </div>
 
+                <!-- TAB APPROVAL USER DENGAN MENU BUAT AKUN MANUAL -->
                 <div id="tab-users" class="admin-content hidden-section bg-white rounded-b-xl shadow-sm p-6">
-                    <h3 class="text-lg font-bold text-gray-900 mb-6">Permintaan Approval User (Pending)</h3>
-                    <div class="overflow-x-auto rounded-lg border border-gray-200">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-bold text-gray-900">Manajemen User & Approval</h3>
+                        <button onclick="openCreateUserModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 flex items-center gap-2 shadow-sm transition">
+                            <i class="fas fa-user-plus"></i> Buat Akun Manual
+                        </button>
+                    </div>
+                    
+                    <h4 class="text-sm font-bold text-gray-500 uppercase mb-3 tracking-wider flex items-center gap-2"><i class="fas fa-clock text-yellow-500"></i> Menunggu Persetujuan (Pending)</h4>
+                    <div class="overflow-x-auto rounded-lg border border-gray-200 mb-8">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Nama</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Email</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">No HP</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Aksi</th></tr></thead>
                             <tbody id="table-pending-admin" class="bg-white divide-y divide-gray-200 text-sm"></tbody>
+                        </table>
+                    </div>
+
+                    <h4 class="text-sm font-bold text-gray-500 uppercase mb-3 tracking-wider flex items-center gap-2"><i class="fas fa-check-circle text-green-500"></i> User Aktif</h4>
+                    <div class="overflow-x-auto rounded-lg border border-gray-200">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Nama</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Role</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Bank Sampah</th></tr></thead>
+                            <tbody id="table-active-admin" class="bg-white divide-y divide-gray-200 text-sm"></tbody>
                         </table>
                     </div>
                 </div>
@@ -276,6 +292,8 @@
     </div>
 
     <!-- ================= MODALS ================= -->
+    
+    <!-- Modal Konfirmasi Overwrite (Register) -->
     <div id="modal-confirm-overwrite" class="hidden-section fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 chat-enter border-t-4 border-yellow-500 text-center">
             <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-600 text-2xl"><i class="fas fa-exclamation-triangle"></i></div>
@@ -288,6 +306,7 @@
         </div>
     </div>
 
+    <!-- Modal Tambah Bank Sampah -->
     <div id="modal-add-bs" class="hidden-section fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 chat-enter border-t-4 border-emerald-600">
             <h3 class="text-lg font-bold mb-4">Tambah Bank Sampah</h3>
@@ -300,6 +319,7 @@
         </div>
     </div>
 
+    <!-- Modal Approve User (Admin Only) -->
     <div id="modal-approve-user" class="hidden-section fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 chat-enter border-t-4 border-blue-600">
             <h3 class="text-lg font-bold mb-4">Approve User</h3>
@@ -309,6 +329,32 @@
                 <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Bank Sampah</label><select id="approve-bank" class="w-full border rounded-lg p-2.5"></select></div>
                 <div class="flex justify-end space-x-3 pt-4"><button type="button" onclick="toggleModal('modal-approve-user')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Batal</button><button onclick="submitApproveUser()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold">Approve</button></div>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal Buat Akun Manual (Admin Only) -->
+    <div id="modal-create-user" class="hidden-section fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 chat-enter border-t-4 border-blue-600">
+            <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fas fa-user-shield text-blue-600"></i> Buat Akun Manual</h3>
+            <p class="text-xs text-gray-500 mb-4">Akun yang dibuat akan berstatus <b>PENDING</b> dan harus di-approve terlebih dahulu sebelum bisa login.</p>
+            <form id="form-create-user" class="space-y-4">
+                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Lengkap</label><input type="text" id="new-user-nama" required class="w-full border rounded-lg p-2.5 text-sm"></div>
+                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label><input type="email" id="new-user-email" required class="w-full border rounded-lg p-2.5 text-sm"></div>
+                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Password Sementara</label><input type="text" id="new-user-pass" value="Rajin123!" required class="w-full border rounded-lg p-2.5 text-sm bg-gray-50"></div>
+                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Role</label>
+                    <select id="new-user-role" class="w-full border rounded-lg p-2.5 text-sm">
+                        <option value="pengurus">Pengurus</option>
+                        <option value="nasabah">Nasabah</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Bank Sampah</label><select id="new-user-bs" class="w-full border rounded-lg p-2.5 text-sm"></select></div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="toggleModal('modal-create-user')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Batal</button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold">Buat Akun</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -427,7 +473,7 @@
         async function loadAdminDashboard() {
             document.getElementById('admin-dashboard').classList.remove('hidden-section');
             const { count } = await supabaseClient.from('bank_sampah').select('*', { count: 'exact', head: true }); document.getElementById('stat-total-bs').textContent = count || 0;
-            loadTableBankSampah(); loadTableHargaOfftaker(); loadPendingUsersAdmin();
+            loadTableBankSampah(); loadTableHargaOfftaker(); loadPendingUsersAdmin(); loadActiveUsersAdmin();
         }
         function switchAdminTab(t) { document.querySelectorAll('.admin-tab').forEach(b => { b.className = 'admin-tab border-transparent text-gray-500 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm'; }); event.currentTarget.className = 'admin-tab active-tab border-emerald-500 text-emerald-600 whitespace-nowrap py-3 px-1 border-b-2 font-bold text-sm'; document.querySelectorAll('.admin-content').forEach(c => c.classList.add('hidden-section')); document.getElementById(`tab-${t}`).classList.remove('hidden-section'); }
         
@@ -437,7 +483,18 @@
         async function loadPendingUsersAdmin() {
             const { data } = await supabaseClient.from('profiles').select('*').eq('role', 'pending');
             const tb = document.getElementById('table-pending-admin'); tb.innerHTML = '';
+            if (!data || data.length === 0) { tb.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-400">Tidak ada user pending.</td></tr>'; return; }
             (data||[]).forEach(u => { tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${u.nama_lengkap}</td><td class="px-6 py-4 text-gray-600">${u.email || '-'}</td><td class="px-6 py-4 text-gray-600">${u.no_hp||'-'}</td><td class="px-6 py-4"><button onclick="openApproveModal('${u.id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">Approve</button></td></tr>`; });
+        }
+
+        async function loadActiveUsersAdmin() {
+            const { data } = await supabaseClient.from('profiles').select('*, bank_sampah(nama_bank)').neq('role', 'pending').order('created_at', {ascending: false});
+            const tb = document.getElementById('table-active-admin'); if(!tb) return;
+            tb.innerHTML = '';
+            if (!data || data.length === 0) { tb.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-center text-gray-400">Belum ada user aktif.</td></tr>'; return; }
+            (data||[]).forEach(u => { 
+                tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${u.nama_lengkap}</td><td class="px-6 py-4"><span class="px-2 py-1 rounded text-xs font-bold ${u.role==='admin'?'bg-purple-100 text-purple-700':u.role==='pengurus'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.role.toUpperCase()}</span></td><td class="px-6 py-4 text-gray-600">${u.bank_sampah?.nama_bank || '-'}</td></tr>`; 
+            });
         }
 
         async function openApproveModal(userId) {
@@ -454,8 +511,79 @@
             const bankId = document.getElementById('approve-bank').value;
             await supabaseClient.from('profiles').update({ role: role, bank_sampah_id: bankId }).eq('id', userId);
             if (role === 'nasabah') await supabaseClient.from('nasabah').upsert({ profile_id: userId, bank_sampah_id: bankId }, { onConflict: 'profile_id' });
-            alert('User berhasil di-approve!'); toggleModal('modal-approve-user'); loadPendingUsersAdmin();
+            alert('User berhasil di-approve!'); toggleModal('modal-approve-user'); loadPendingUsersAdmin(); loadActiveUsersAdmin();
         }
+
+        // --- FUNGSI BUAT AKUN MANUAL OLEH ADMIN (MASIH PENDING) ---
+        async function openCreateUserModal() {
+            const sel = document.getElementById('new-user-bs');
+            sel.innerHTML = '<option value="">-- Tanpa Bank Sampah --</option>';
+            const { data: bs } = await supabaseClient.from('bank_sampah').select('*').order('nama_bank');
+            (bs||[]).forEach(b => sel.innerHTML += `<option value="${b.id}">${b.nama_bank}</option>`);
+            toggleModal('modal-create-user');
+        }
+
+        document.getElementById('form-create-user').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Membuat...';
+            btn.disabled = true;
+
+            try {
+                const email = document.getElementById('new-user-email').value;
+                const password = document.getElementById('new-user-pass').value;
+                const nama = document.getElementById('new-user-nama').value;
+                const role = document.getElementById('new-user-role').value;
+                const bankId = document.getElementById('new-user-bs').value || null;
+
+                // 1. Buat Auth User via Admin API (Supabase JS v2 support ini via Anon Key jika RLS diizinkan, 
+                // tapi lebih aman pakai SQL Editor untuk production. Untuk demo frontend ini kita coba insert profile dulu)
+                
+                // CATATAN: Karena keterbatasan Anon Key, kita simulasi dengan insert profile pending.
+                // User HARUS daftar via form register atau Admin pakai SQL Editor untuk auth.users yang valid.
+                // Tapi karena kamu mau menu manual, kita asumsikan admin sudah punya akses write ke profiles.
+                
+                // Solusi paling aman tanpa Service Key: Gunakan RPC atau Edge Function. 
+                // Untuk sekarang, kita arahkan admin untuk pakai SQL Editor jika gagal, 
+                // ATAU kita buat user dummy di profiles yang nanti di-link manual.
+                
+                // KARENA KAMU MAU YANG PASTI JALAN TANPA ERROR AUTH.ADMIN:
+                // Kita akan membuat entry di profiles dengan ID random, dan instruksikan admin 
+                // untuk match-kan dengan user auth yang dibuat via SQL.
+                
+                // TAPI AGAR UX NYAMAN: Kita gunakan pendekatan "Insert Profile Pending" saja.
+                // Admin harus membuat user Auth terpisah via SQL Editor (saya sertakan panduannya di alert).
+                
+                const tempId = crypto.randomUUID(); // Generate ID sementara
+                
+                // Insert ke profiles sebagai PENDING
+                const { error: profileError } = await supabaseClient.from('profiles').insert({
+                    id: tempId, // Ini harus sama dengan ID di auth.users nanti
+                    role: 'pending', // OTOMATIS PENDING BIAR PERLU APPROVAL
+                    status: 'active',
+                    nama_lengkap: nama,
+                    no_hp: '-',
+                    alamat: '-',
+                    bank_sampah_id: bankId
+                });
+
+                if (profileError) throw profileError;
+
+                alert(`✅ Entry Profil Berhasil Dibuat!\n\n⚠️ LANGKAH TERAKHIR (WAJIB):\nKarena keamanan browser, Anda harus membuat User Auth secara manual via SQL Editor agar bisa login.\n\nCopy script ini ke SQL Editor:\n\nINSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token) VALUES ('00000000-0000-0000-0000-000000000000', '${tempId}', 'authenticated', 'authenticated', '${email}', crypt('${password}', gen_salt('bf')), NOW(), '{\"provider\":\"email\",\"providers\":[\"email\"]}', '{\"nama_lengkap\":\"${nama}\"}', NOW(), NOW(), '', '', '', '');\n\nSetelah itu, approve user ini di dashboard!`);
+                
+                toggleModal('modal-create-user');
+                e.target.reset();
+                loadPendingUsersAdmin(); 
+                loadActiveUsersAdmin();
+                
+            } catch (err) {
+                alert('Gagal membuat entry profil: ' + err.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
 
         // --- PENGURUS FUNCTIONS (LENGKAP PDU) ---
         async function loadPengurusDashboard() {
