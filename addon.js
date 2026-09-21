@@ -1,4 +1,4 @@
-// KONFIGURASI SUPABASE (GANTI DENGAN PUNYA KAMU)
+// KONFIGURASI SUPABASE
 const SUPABASE_URL = 'https://woqifznkmbsjxelzhmjk.supabase.co'; 
 const SUPABASE_ANON_KEY = 'sb_publishable_3iBnO0BYibh8Y8WJwXI0hg_X3iho_pj'; 
 
@@ -111,7 +111,7 @@ async function loadAdminDashboard() {
     document.getElementById('admin-dashboard').classList.remove('hidden-section');
     const { count } = await supabaseClient.from('bank_sampah').select('*', { count: 'exact', head: true }); document.getElementById('stat-total-bs').textContent = count || 0;
     loadTableBankSampah(); loadTableHargaOfftaker(); loadPendingUsersAdmin(); loadActiveUsersAdmin();
-    loadPduData(); // Load data dropdown PDU saat dashboard admin dibuka
+    loadPduData(); 
 }
 
 function switchAdminTab(t) { 
@@ -122,7 +122,63 @@ function switchAdminTab(t) {
 }
 
 async function loadTableBankSampah() { const { data } = await supabaseClient.from('bank_sampah').select('*').order('created_at', { ascending: false }); const tb = document.getElementById('table-bs-body'); tb.innerHTML = ''; (data||[]).forEach(r => tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${r.nama_bank}</td><td class="px-6 py-4 text-gray-600">${r.alamat||'-'}</td><td class="px-6 py-4 text-gray-600">${r.no_hp||'-'}</td></tr>`); }
-async function loadTableHargaOfftaker() { const { data } = await supabaseClient.from('harga_offtaker').select('*, jenis_sampah(nama_sampah)').is('bank_sampah_id', null).order('jenis_sampah(nama_sampah)'); const tb = document.getElementById('table-offtaker-body'); tb.innerHTML = ''; (data||[]).forEach(h => tb.innerHTML += `<tr><td class="px-6 py-3 font-medium">${h.jenis_sampah?.nama_sampah}</td><td class="px-6 py-3 text-emerald-700 font-bold">${formatRupiah(h.harga_per_kg)}</td></tr>`); }
+
+// FUNGSI LOAD TABEL HARGA DENGAN TOMBOL EDIT MANUAL
+async function loadTableHargaOfftaker() { 
+    const { data } = await supabaseClient.from('harga_offtaker').select('*, jenis_sampah(nama_sampah)').is('bank_sampah_id', null).order('jenis_sampah(nama_sampah)'); 
+    const tb = document.getElementById('table-offtaker-body'); 
+    tb.innerHTML = ''; 
+    
+    // Pastikan header tabel punya kolom Aksi
+    const thead = tb.parentElement.querySelector('thead tr');
+    if(thead && thead.children.length < 3) {
+        const th = document.createElement('th');
+        th.className = "px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase";
+        th.textContent = "Aksi";
+        thead.appendChild(th);
+    }
+
+    (data||[]).forEach(h => {
+        tb.innerHTML += `
+        <tr>
+            <td class="px-6 py-3 font-medium">${h.jenis_sampah?.nama_sampah}</td>
+            <td class="px-6 py-3 text-emerald-700 font-bold">${formatRupiah(h.harga_per_kg)}</td>
+            <td class="px-6 py-3">
+                <button onclick="editHargaManual('${h.jenis_sampah_id}', '${h.jenis_sampah?.nama_sampah}', ${h.harga_per_kg})" class="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center gap-1">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+            </td>
+        </tr>`; 
+    }); 
+}
+
+// FUNGSI EDIT HARGA MANUAL
+async function editHargaManual(jenisId, namaSampah, hargaLama) {
+    const newHarga = prompt(`Edit Harga untuk:\n${namaSampah}\n\nHarga Lama: ${formatRupiah(hargaLama)}\n\nMasukkan Harga Baru (angka saja):`, hargaLama);
+    
+    if (newHarga === null) return; // User cancel
+    
+    const hargaBaru = parseFloat(newHarga.replace(/[^\d.-]/g, '')); // Bersihkan karakter non-angka
+    
+    if (isNaN(hargaBaru) || hargaBaru < 0) {
+        alert("Harga tidak valid! Masukkan angka saja.");
+        return;
+    }
+
+    const { error } = await supabaseClient
+        .from('harga_offtaker')
+        .update({ harga_per_kg: hargaBaru })
+        .eq('jenis_sampah_id', jenisId)
+        .is('bank_sampah_id', null);
+
+    if (error) {
+        alert("Gagal update harga: " + error.message);
+    } else {
+        alert("Harga berhasil diubah!");
+        loadTableHargaOfftaker(); // Refresh tabel
+        loadMasterData(); // Update variabel global
+    }
+}
 
 async function loadPendingUsersAdmin() {
     const { data } = await supabaseClient.from('profiles').select('*').eq('role', 'pending');
@@ -328,7 +384,7 @@ document.getElementById('admin-form-kirim-pdu')?.addEventListener('submit', asyn
 async function resetPasswordAdmin(userId, email) {
     const newPass = prompt(`Masukkan password baru untuk user ${email}:`, "Rajin123!");
     if (!newPass) return;
-    alert(`️ INSTRUKSI RESET PASSWORD MANUAL\n\nKarena alasan keamanan browser, reset password harus dilakukan via SQL Editor.\n\nSilakan copy-paste script ini ke Supabase SQL Editor:\n\nUPDATE auth.users SET encrypted_password = crypt('${newPass}', gen_salt('bf')) WHERE id = '${userId}';\n\nSetelah dijalankan, user bisa login dengan password baru.`);
+    alert(`⚠️ INSTRUKSI RESET PASSWORD MANUAL\n\nKarena alasan keamanan browser, reset password harus dilakukan via SQL Editor.\n\nSilakan copy-paste script ini ke Supabase SQL Editor:\n\nUPDATE auth.users SET encrypted_password = crypt('${newPass}', gen_salt('bf')) WHERE id = '${userId}';\n\nSetelah dijalankan, user bisa login dengan password baru.`);
 }
 
 async function editUserRole(userId) {
@@ -504,18 +560,20 @@ async function askFaq(key) {
     }, 600);
 }
 
-// --- EXPORT & IMPORT CSV (FIXED VERSION) ---
+// --- EXPORT & IMPORT CSV (FIXED & SYNCED) ---
 function exportOfftakerCSV(){
-    let csv = '\uFEFFNama Sampah,Harga Per Kg\n'; 
+    // Format Export yang pasti bisa di-import ulang
+    let csv = '\uFEFFNama Sampah,Harga\n'; 
     jenisSampahList.forEach(j=>{
         const harga = hargaOfftakerMap[j.id] || 0;
+        // Pakai kutip untuk nama sampah biar aman kalau ada koma
         csv += `"${j.nama_sampah}",${harga}\n`;
     });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Harga_Offtaker_RAJIN_${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `Master_Harga_RAJIN_${new Date().toISOString().slice(0,10)}.csv`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
@@ -525,7 +583,7 @@ async function handleImportOfftaker(input){
     
     try {
         const t = await f.text();
-        const lines = t.split('\n').filter(line => line.trim() !== ''); // Hapus baris kosong
+        const lines = t.split('\n').filter(line => line.trim() !== ''); 
         let successCount = 0;
         let errorCount = 0;
         
@@ -534,7 +592,7 @@ async function handleImportOfftaker(input){
             const line = lines[i].trim();
             if(!line) continue;
             
-            // Handle CSV yang pakai koma di dalam kutip (misal: "Sampah, Jenis", 5000)
+            // Regex pintar buat handle CSV dengan koma di dalam kutip
             const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
             if(!matches || matches.length < 2) {
                 errorCount++;
@@ -550,7 +608,7 @@ async function handleImportOfftaker(input){
                 continue;
             }
             
-            // Cari ID jenis sampah yang cocok (case insensitive)
+            // Cari ID jenis sampah yang cocok (case insensitive & partial match)
             const js = jenisSampahList.find(x => 
                 x.nama_sampah.toLowerCase() === namaSampah.toLowerCase() ||
                 x.nama_sampah.toLowerCase().includes(namaSampah.toLowerCase()) ||
@@ -572,16 +630,17 @@ async function handleImportOfftaker(input){
                 if(!error) successCount++;
                 else errorCount++;
             } else {
-                errorCount++; // Nama sampah tidak ditemukan di master data
+                errorCount++; 
             }
         }
         
         let msg = `Import selesai!\n✅ Berhasil: ${successCount} data\n❌ Gagal/Skip: ${errorCount} data`;
-        if(errorCount > 0) msg += '\n\n(Cek apakah nama sampah di CSV sama persis dengan Master Data)';
+        if(errorCount > 0) msg += '\n\n(Cek apakah nama sampah di CSV sama dengan Master Data)';
         
         alert(msg);
-        loadTableHargaOfftaker(); // Refresh tabel
-        input.value = ''; // Reset input file
+        loadTableHargaOfftaker(); 
+        loadMasterData(); // Update variabel global biar real-time
+        input.value = ''; 
         
     } catch(err) {
         alert('Error saat memproses file: ' + err.message);
