@@ -132,32 +132,57 @@
                 </div>
             </div>
 
-            <!-- PENGURUS DASHBOARD -->
+            <!-- PENGURUS DASHBOARD LENGKAP (PDU + APPROVAL) -->
             <div id="pengurus-dashboard" class="hidden-section space-y-6">
-                <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-lg flex justify-between items-center"><div><h2 class="text-xl font-bold" id="pengurus-nama-bs">Bank Sampah Saya</h2><p class="text-emerald-100 text-sm">Kelola transaksi dan anggota</p></div><div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20"><p class="text-xs text-emerald-100 uppercase font-bold">Tabungan Nasabah</p><h3 class="text-2xl font-bold" id="pengurus-total-tabungan">Rp 0</h3></div></div>
+                <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-lg flex justify-between items-center">
+                    <div><h2 class="text-xl font-bold" id="pengurus-nama-bs">Bank Sampah Saya</h2><p class="text-emerald-100 text-sm">Kelola Transaksi & Anggota</p></div>
+                    <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 text-right"><p class="text-xs text-emerald-100 uppercase font-bold">Total Tabungan Nasabah</p><h3 class="text-2xl font-bold" id="pengurus-total-tabungan">Rp 0</h3></div>
+                </div>
                 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <h3 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b">Input Setor Sampah</h3>
-                        <form id="form-transaksi" class="space-y-4">
-                            <select id="trx-nasabah" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50"><option value="">-- Pilih Nasabah --</option></select>
-                            <div class="grid grid-cols-2 gap-4">
-                                <select id="trx-jenis" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50" onchange="updateTrxPreview()"><option value="">-- Pilih Sampah --</option></select>
-                                <input type="number" id="trx-berat" step="0.01" class="w-full border rounded-lg p-2.5 text-sm" oninput="updateTrxPreview()" placeholder="Berat/Jumlah">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- KOLOM KIRI: TRANSAKSI SETOR & TARIK -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div class="flex border-b border-gray-200">
+                                <button onclick="switchTrxTab('setor')" id="tab-setor" class="flex-1 py-3 text-sm font-bold text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50/50"><i class="fas fa-plus-circle mr-2"></i>Input Setor Sampah</button>
+                                <button onclick="switchTrxTab('tarik')" id="tab-tarik" class="flex-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-700"><i class="fas fa-hand-holding-usd mr-2"></i>Pengambilan Dana</button>
                             </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <select id="trx-kategori" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50"><option value="beli">Beli</option><option value="sedekah">Sedekah</option></select>
-                                <select id="trx-status" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50"><option value="ditabung">Ditabung</option><option value="dibayar">Dibayar</option></select>
+                            <div class="p-6">
+                                <!-- FORM SETOR -->
+                                <form id="form-setor" class="space-y-4">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nasabah Penyetor</label><select id="trx-nasabah" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50"></select></div>
+                                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Jenis Sampah</label><select id="trx-jenis" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50" onchange="updateTrxPreview()"></select></div>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Berat (<span id="trx-satuan-label">Kg</span>)</label><input type="number" id="trx-berat" step="0.01" class="w-full border rounded-lg p-2.5 text-sm" oninput="updateTrxPreview()" placeholder="0.00"></div>
+                                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Status Bayar</label><select id="trx-status" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50"><option value="ditabung">Ditabung</option><option value="dibayar">Langsung Dibayar</option></select></div>
+                                    </div>
+                                    <div class="bg-emerald-50 p-4 rounded-lg flex justify-between items-center border border-emerald-100 mt-4"><span class="text-sm font-medium text-emerald-800">Estimasi Nilai:</span><span class="text-xl font-bold text-emerald-700" id="trx-preview-total">Rp 0</span></div>
+                                    <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition shadow-md"><i class="fas fa-save mr-2"></i>Simpan Transaksi Setor</button>
+                                </form>
+
+                                <!-- FORM TARIK DANA -->
+                                <form id="form-tarik" class="space-y-4 hidden-section">
+                                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nasabah Penarik</label><select id="tarik-nasabah" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50" onchange="loadSaldoNasabah()"></select></div>
+                                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 flex justify-between items-center"><span class="text-sm font-medium text-blue-800">Saldo Tersedia:</span><span class="text-xl font-bold text-blue-700" id="tarik-saldo-display">Rp 0</span></div>
+                                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nominal Penarikan (Rp)</label><input type="number" id="tarik-nominal" class="w-full border rounded-lg p-2.5 text-sm" placeholder="Masukkan nominal..."></div>
+                                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Keterangan</label><input type="text" id="tarik-ket" class="w-full border rounded-lg p-2.5 text-sm" placeholder="Misal: Ambil uang jajan"></div>
+                                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition shadow-md"><i class="fas fa-money-bill-wave mr-2"></i>Proses Penarikan</button>
+                                </form>
                             </div>
-                            <div class="bg-emerald-50 p-4 rounded-lg flex justify-between items-center border border-emerald-100"><span class="text-sm font-medium text-emerald-800">Total:</span><span class="text-xl font-bold text-emerald-700" id="trx-preview-total">Rp 0</span></div>
-                            <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700">Simpan Transaksi</button>
-                        </form>
+                        </div>
                     </div>
-                    
-                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <h3 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b">Approval Anggota (Pending)</h3>
-                        <div class="overflow-y-auto max-h-80 pr-2 border rounded-lg">
-                            <table class="min-w-full text-sm"><thead class="bg-gray-50 sticky top-0"><tr><th class="py-3 px-4 text-left font-bold text-gray-500 uppercase text-xs">Nama</th><th class="py-3 px-4 text-left font-bold text-gray-500 uppercase text-xs">Kontak</th><th class="py-3 px-4 text-right font-bold text-gray-500 uppercase text-xs">Aksi</th></tr></thead><tbody id="table-pending-pengurus" class="divide-y divide-gray-100"></tbody></table>
+
+                    <!-- KOLOM KANAN: APPROVAL & RIWAYAT -->
+                    <div class="space-y-6">
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                            <h3 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b flex items-center gap-2"><i class="fas fa-user-check text-yellow-500"></i> Approval Anggota</h3>
+                            <div class="overflow-y-auto max-h-60 pr-1"><table class="min-w-full text-sm"><thead class="bg-gray-50 sticky top-0"><tr><th class="py-2 px-3 text-left font-bold text-gray-500 uppercase text-xs">Nama</th><th class="py-2 px-3 text-right font-bold text-gray-500 uppercase text-xs">Aksi</th></tr></thead><tbody id="table-pending-pengurus" class="divide-y divide-gray-100"></tbody></table></div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                            <h3 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b flex items-center gap-2"><i class="fas fa-history text-gray-400"></i> Riwayat Terkini</h3>
+                            <div class="space-y-3 max-h-80 overflow-y-auto pr-1" id="list-riwayat-transaksi"></div>
                         </div>
                     </div>
                 </div>
@@ -175,8 +200,6 @@
     </div>
 
     <!-- ================= MODALS ================= -->
-    
-    <!-- Modal Konfirmasi Overwrite -->
     <div id="modal-confirm-overwrite" class="hidden-section fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 chat-enter border-t-4 border-yellow-500 text-center">
             <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-600 text-2xl"><i class="fas fa-exclamation-triangle"></i></div>
@@ -189,7 +212,6 @@
         </div>
     </div>
 
-    <!-- Modal Tambah Bank Sampah -->
     <div id="modal-add-bs" class="hidden-section fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 chat-enter border-t-4 border-emerald-600">
             <h3 class="text-lg font-bold mb-4">Tambah Bank Sampah</h3>
@@ -202,7 +224,6 @@
         </div>
     </div>
 
-    <!-- Modal Approve User (Admin Only) -->
     <div id="modal-approve-user" class="hidden-section fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 chat-enter border-t-4 border-blue-600">
             <h3 class="text-lg font-bold mb-4">Approve User</h3>
@@ -222,7 +243,6 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_3iBnO0BYibh8Y8WJwXI0hg_X3iho_pj'; 
         
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
         let currentUser = null, currentProfile = null, jenisSampahList = [], hargaOfftakerMap = {}; 
 
         async function initApp() {
@@ -238,27 +258,20 @@
             document.getElementById('tab-register').className = tab === 'register' ? 'flex-1 py-2 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition' : 'flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition';
         }
 
-        // --- LOGIN HANDLER ---
+        // --- LOGIN ---
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector('button');
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Memproses...';
             btn.disabled = true;
-
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ 
-                email: document.getElementById('login-email').value, 
-                password: document.getElementById('login-password').value 
-            });
-            
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email: document.getElementById('login-email').value, password: document.getElementById('login-password').value });
+            btn.innerHTML = originalText; btn.disabled = false;
             if (error) alert('Login Gagal: ' + error.message);
             else await handleLoginSuccess(data.user);
         });
 
-        // --- REGISTER HANDLER (DENGAN OVERWRITE) ---
+        // --- REGISTER DENGAN OVERWRITE ---
         document.getElementById('register-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('reg-email').value;
@@ -273,66 +286,32 @@
             btn.disabled = true;
 
             try {
-                // Coba signup
-                const { data: authData, error: authError } = await supabaseClient.auth.signUp({ 
-                    email, 
-                    password,
-                    options: { data: { nama_lengkap: nama, no_hp: hp, alamat: alamat } }
-                });
-
+                const { data: authData, error: authError } = await supabaseClient.auth.signUp({ email, password, options: { data: { nama_lengkap: nama, no_hp: hp, alamat: alamat } } });
                 if (authError) {
-                    // Jika user sudah terdaftar, tampilkan modal overwrite
                     if (authError.message.toLowerCase().includes('already registered') || authError.message.toLowerCase().includes('duplicate')) {
                         sessionStorage.setItem('reg_data', JSON.stringify({ email, password, nama, hp, alamat }));
                         document.getElementById('modal-confirm-overwrite').classList.remove('hidden-section');
                         document.getElementById('modal-confirm-overwrite').classList.add('active-section');
-                        
-                        document.getElementById('btn-confirm-overwrite').onclick = async () => {
-                            await handleOverwriteUser(email, password, nama, hp, alamat);
-                        };
-                    } else {
-                        alert('Gagal mendaftar: ' + authError.message);
-                    }
+                        document.getElementById('btn-confirm-overwrite').onclick = async () => await handleOverwriteUser(email, password, nama, hp, alamat);
+                    } else { alert('Gagal mendaftar: ' + authError.message); }
                 } else {
-                    // User baru berhasil (Trigger akan otomatis insert profile pending)
                     alert('Pendaftaran berhasil! Akun Anda berstatus Pending.');
-                    switchAuthTab('login');
-                    e.target.reset();
+                    switchAuthTab('login'); e.target.reset();
                 }
-            } catch (err) {
-                alert('Terjadi kesalahan: ' + err.message);
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
+            } catch (err) { alert('Terjadi kesalahan: ' + err.message); }
+            finally { btn.innerHTML = originalText; btn.disabled = false; }
         });
 
         async function handleOverwriteUser(email, password, nama, hp, alamat) {
             try {
-                // Login dulu buat dapet UID
                 const { data: loginData, error: loginError } = await supabaseClient.auth.signInWithPassword({ email, password });
                 if (loginError) throw loginError;
-
-                // Update profile jadi pending lagi (Overwrite)
-                const { error: profileError } = await supabaseClient.from('profiles').upsert({ 
-                    id: loginData.user.id, 
-                    role: 'pending', 
-                    status: 'active',
-                    nama_lengkap: nama, 
-                    no_hp: hp, 
-                    alamat: alamat,
-                    bank_sampah_id: null 
-                }, { onConflict: 'id' });
-
+                const { error: profileError } = await supabaseClient.from('profiles').upsert({ id: loginData.user.id, role: 'pending', status: 'active', nama_lengkap: nama, no_hp: hp, alamat: alamat, bank_sampah_id: null }, { onConflict: 'id' });
                 if (profileError) throw profileError;
-
                 closeOverwriteModal();
                 alert('Data berhasil diperbarui! Akun kembali ke status Pending.');
-                switchAuthTab('login');
-                document.getElementById('register-form').reset();
-            } catch (err) {
-                alert('Gagal menimpa data: ' + err.message);
-            }
+                switchAuthTab('login'); document.getElementById('register-form').reset();
+            } catch (err) { alert('Gagal menimpa data: ' + err.message); }
         }
 
         function closeOverwriteModal() {
@@ -341,27 +320,16 @@
             sessionStorage.removeItem('reg_data');
         }
 
-        // --- CORE AUTH LOGIC ---
+        // --- CORE AUTH ---
         async function handleLoginSuccess(user) {
             currentUser = user;
-            // Ambil profile pakai select * karena RLS profiles sudah dimodifikasi
             const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
-            
-            if (error || !profile) {
-                alert('Error mengambil data profil. Silakan hubungi admin.');
-                await doLogout();
-                return;
-            }
-            
-            if (profile.role === 'pending') {
-                showSection('pending-page');
-                return;
-            }
+            if (error || !profile) { alert('Error mengambil data profil.'); await doLogout(); return; }
+            if (profile.role === 'pending') { showSection('pending-page'); return; }
             
             currentProfile = profile;
             document.getElementById('user-name').textContent = profile.nama_lengkap;
             document.getElementById('user-role').textContent = profile.role;
-            
             await loadMasterData();
             showSection('app-container');
             
@@ -391,12 +359,9 @@
         async function loadTableHargaOfftaker() { const { data } = await supabaseClient.from('harga_offtaker').select('*, jenis_sampah(nama_sampah)').is('bank_sampah_id', null).order('jenis_sampah(nama_sampah)'); const tb = document.getElementById('table-offtaker-body'); tb.innerHTML = ''; (data||[]).forEach(h => tb.innerHTML += `<tr><td class="px-6 py-3 font-medium">${h.jenis_sampah?.nama_sampah}</td><td class="px-6 py-3 text-emerald-700 font-bold">${formatRupiah(h.harga_per_kg)}</td></tr>`); }
         
         async function loadPendingUsersAdmin() {
-            // Admin bisa lihat semua user pending
             const { data } = await supabaseClient.from('profiles').select('*').eq('role', 'pending');
             const tb = document.getElementById('table-pending-admin'); tb.innerHTML = '';
-            (data||[]).forEach(u => {
-                tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${u.nama_lengkap}</td><td class="px-6 py-4 text-gray-600">${u.email || '-'}</td><td class="px-6 py-4 text-gray-600">${u.no_hp||'-'}</td><td class="px-6 py-4"><button onclick="openApproveModal('${u.id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">Approve</button></td></tr>`;
-            });
+            (data||[]).forEach(u => { tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${u.nama_lengkap}</td><td class="px-6 py-4 text-gray-600">${u.email || '-'}</td><td class="px-6 py-4 text-gray-600">${u.no_hp||'-'}</td><td class="px-6 py-4"><button onclick="openApproveModal('${u.id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">Approve</button></td></tr>`; });
         }
 
         async function openApproveModal(userId) {
@@ -411,32 +376,23 @@
             const userId = document.getElementById('approve-user-id').value;
             const role = document.getElementById('approve-role').value;
             const bankId = document.getElementById('approve-bank').value;
-            
             await supabaseClient.from('profiles').update({ role: role, bank_sampah_id: bankId }).eq('id', userId);
-            
-            if (role === 'nasabah') {
-                await supabaseClient.from('nasabah').upsert({ profile_id: userId, bank_sampah_id: bankId }, { onConflict: 'profile_id' });
-            }
-            
-            alert('User berhasil di-approve!');
-            toggleModal('modal-approve-user');
-            loadPendingUsersAdmin();
+            if (role === 'nasabah') await supabaseClient.from('nasabah').upsert({ profile_id: userId, bank_sampah_id: bankId }, { onConflict: 'profile_id' });
+            alert('User berhasil di-approve!'); toggleModal('modal-approve-user'); loadPendingUsersAdmin();
         }
 
-        // --- PENGURUS FUNCTIONS ---
+        // --- PENGURUS FUNCTIONS (LENGKAP PDU) ---
         async function loadPengurusDashboard() {
             document.getElementById('pengurus-dashboard').classList.remove('hidden-section');
             const { data: bs } = await supabaseClient.from('bank_sampah').select('*').eq('id', currentProfile.bank_sampah_id).single();
             document.getElementById('pengurus-nama-bs').textContent = bs?.nama_bank || 'Bank Sampah Saya';
             
-            // Load Pending Users HANYA untuk bank sampah pengurus ini
+            // Load Pending Users
             const { data: pending } = await supabaseClient.from('profiles').select('*').eq('role', 'pending').eq('bank_sampah_id', currentProfile.bank_sampah_id);
             const tb = document.getElementById('table-pending-pengurus'); tb.innerHTML = '';
-            (pending||[]).forEach(u => {
-                tb.innerHTML += `<tr><td class="py-3 px-4 font-medium">${u.nama_lengkap}</td><td class="py-3 px-4 text-xs text-gray-500">${u.no_hp||'-'}</td><td class="py-3 px-4 text-right"><button onclick="approveUserByPengurus('${u.id}')" class="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700">Accept</button></td></tr>`;
-            });
+            (pending||[]).forEach(u => { tb.innerHTML += `<tr><td class="py-3 px-4 font-medium">${u.nama_lengkap}</td><td class="py-3 px-4 text-right"><button onclick="approveUserByPengurus('${u.id}')" class="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700">Accept</button></td></tr>`; });
 
-            // Load Dropdowns
+            // Load Dropdowns untuk Setor
             const { data: nasabah } = await supabaseClient.from('nasabah').select('*, profiles(nama_lengkap)').eq('bank_sampah_id', currentProfile.bank_sampah_id);
             const selN = document.getElementById('trx-nasabah'); selN.innerHTML = '<option value="">-- Pilih Nasabah --</option>';
             (nasabah||[]).forEach(n => selN.innerHTML += `<option value="${n.id}">${n.profiles?.nama_lengkap}</option>`);
@@ -451,18 +407,91 @@
                 if(st) { if(st.mode_harga==='custom'){fp=st.harga_custom;ml='Custom'} else if(st.mode_harga==='offtaker'){fp=hd;ml='Ikut Offtaker'} else {fp=hd*(1-st.persentase/100);ml=`Persen (${st.persentase}%)`} } else { fp=hd*0.7; }
                 const opt = document.createElement('option'); opt.value=js.id; opt.textContent=js.nama_sampah; opt.dataset.harga=fp; opt.dataset.satuan=js.satuan; selJ.appendChild(opt);
             });
+
+            // Load Dropdown Tarik Dana
+            await loadDropdownNasabahTarik();
+            loadRecentTransactions();
         }
 
+        function switchTrxTab(tab) {
+            const btnSetor = document.getElementById('tab-setor'); const btnTarik = document.getElementById('tab-tarik');
+            const formSetor = document.getElementById('form-setor'); const formTarik = document.getElementById('form-tarik');
+            if (tab === 'setor') {
+                btnSetor.className = "flex-1 py-3 text-sm font-bold text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50/50";
+                btnTarik.className = "flex-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-700";
+                formSetor.classList.remove('hidden-section'); formTarik.classList.add('hidden-section');
+            } else {
+                btnTarik.className = "flex-1 py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 bg-blue-50/50";
+                btnSetor.className = "flex-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-700";
+                formTarik.classList.remove('hidden-section'); formSetor.classList.add('hidden-section');
+                loadDropdownNasabahTarik(); 
+            }
+        }
+
+        async function loadDropdownNasabahTarik() {
+            const select = document.getElementById('tarik-nasabah'); select.innerHTML = '<option value="">-- Pilih Nasabah --</option>';
+            const { data } = await supabaseClient.from('nasabah').select('*, profiles(nama_lengkap)').eq('bank_sampah_id', currentProfile.bank_sampah_id);
+            (data || []).forEach(n => { select.innerHTML += `<option value="${n.id}" data-saldo="${n.saldo_tabungan || 0}">${n.profiles?.nama_lengkap}</option>`; });
+        }
+
+        function loadSaldoNasabah() {
+            const select = document.getElementById('tarik-nasabah');
+            const selectedOpt = select.options[select.selectedIndex];
+            const saldo = selectedOpt ? parseFloat(selectedOpt.dataset.saldo) || 0 : 0;
+            document.getElementById('tarik-saldo-display').textContent = formatRupiah(saldo);
+        }
+
+        document.getElementById('form-tarik').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nasabahId = document.getElementById('tarik-nasabah').value;
+            const nominal = parseFloat(document.getElementById('tarik-nominal').value);
+            if (!nasabahId || !nominal || nominal <= 0) { alert('Mohon lengkapi data penarikan!'); return; }
+            const { data: nData } = await supabaseClient.from('nasabah').select('saldo_tabungan').eq('id', nasabahId).single();
+            if (!nData || nData.saldo_tabungan < nominal) { alert('Saldo tidak mencukupi!'); return; }
+            
+            await supabaseClient.from('nasabah').update({ saldo_tabungan: nData.saldo_tabungan - nominal }).eq('id', nasabahId);
+            alert(`Penarikan ${formatRupiah(nominal)} berhasil!`);
+            e.target.reset(); document.getElementById('tarik-saldo-display').textContent = 'Rp 0';
+            loadPengurusDashboard();
+        });
+
         async function approveUserByPengurus(userId) {
-            // Pengurus cuma bisa approve jadi nasabah di bank sampah mereka
             await supabaseClient.from('profiles').update({ role: 'nasabah' }).eq('id', userId);
             await supabaseClient.from('nasabah').upsert({ profile_id: userId, bank_sampah_id: currentProfile.bank_sampah_id }, { onConflict: 'profile_id' });
-            alert('Nasabah berhasil di-accept!');
-            loadPengurusDashboard();
+            alert('Nasabah berhasil di-accept!'); loadPengurusDashboard();
         }
 
         function updateTrxPreview() { const s=document.getElementById('trx-jenis'); const b=parseFloat(document.getElementById('trx-berat').value)||0; const o=s.options[s.selectedIndex]; if(o&&o.value){document.getElementById('trx-preview-total').textContent=formatRupiah((parseFloat(o.dataset.harga)||0)*b);}else{document.getElementById('trx-preview-total').textContent='Rp 0';} }
-        document.getElementById('form-transaksi').addEventListener('submit', async(e)=>{e.preventDefault(); const ni=document.getElementById('trx-nasabah').value; const ji=document.getElementById('trx-jenis').value; const b=parseFloat(document.getElementById('trx-berat').value); if(!ni||!ji||!b){alert('Lengkapi data!');return;} const s=document.getElementById('trx-jenis'); const h=parseFloat(s.options[s.selectedIndex].dataset.harga); const t=h*b; const {error}=await supabaseClient.from('transaksi').insert({bank_sampah_id:currentProfile.bank_sampah_id,nasabah_id:ni,jenis_sampah_id:ji,berat_kg:b,harga_saat_transaksi:h,total_harga:t,kategori_transaksi:document.getElementById('trx-kategori').value,status_bayar:document.getElementById('trx-status').value}); if(error)alert('Gagal: '+error.message); else{alert('Berhasil!');e.target.reset();document.getElementById('trx-preview-total').textContent='Rp 0';}});
+        
+        document.getElementById('form-setor').addEventListener('submit', async(e)=>{
+            e.preventDefault(); 
+            const ni=document.getElementById('trx-nasabah').value; const ji=document.getElementById('trx-jenis').value; const b=parseFloat(document.getElementById('trx-berat').value); 
+            if(!ni||!ji||!b){alert('Lengkapi data!');return;} 
+            const s=document.getElementById('trx-jenis'); const h=parseFloat(s.options[s.selectedIndex].dataset.harga); const t=h*b; 
+            const status = document.getElementById('trx-status').value;
+            
+            // Insert Transaksi
+            const {error}=await supabaseClient.from('transaksi').insert({bank_sampah_id:currentProfile.bank_sampah_id,nasabah_id:ni,jenis_sampah_id:ji,berat_kg:b,harga_saat_transaksi:h,total_harga:t,kategori_transaksi:'beli',status_bayar:status}); 
+            
+            // Jika ditabung, update saldo nasabah
+            if(status === 'ditabung' && !error) {
+                const { data: nData } = await supabaseClient.from('nasabah').select('saldo_tabungan').eq('id', ni).single();
+                await supabaseClient.from('nasabah').update({ saldo_tabungan: (nData?.saldo_tabungan || 0) + t }).eq('id', ni);
+            }
+
+            if(error)alert('Gagal: '+error.message); 
+            else{alert('Berhasil!');e.target.reset();document.getElementById('trx-preview-total').textContent='Rp 0'; loadPengurusDashboard();}
+        });
+
+        async function loadRecentTransactions() {
+            const container = document.getElementById('list-riwayat-transaksi'); container.innerHTML = '<div class="text-center text-xs text-gray-400 py-4">Memuat...</div>';
+            const { data } = await supabaseClient.from('transaksi').select('*, jenis_sampah(nama_sampah), nasabah(profiles(nama_lengkap))').eq('bank_sampah_id', currentProfile.bank_sampah_id).order('tanggal_transaksi', { ascending: false }).limit(10);
+            container.innerHTML = '';
+            if (!data || data.length === 0) { container.innerHTML = '<div class="text-center text-xs text-gray-400 py-4">Belum ada transaksi.</div>'; return; }
+            data.forEach(t => {
+                container.innerHTML += `<div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100 text-sm"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center shrink-0"><i class="fas fa-recycle text-xs"></i></div><div><p class="font-bold text-gray-800">${t.nasabah?.profiles?.nama_lengkap || 'Nasabah'}</p><p class="text-[10px] text-gray-500">${new Date(t.tanggal_transaksi).toLocaleDateString('id-ID')}</p></div></div><div class="text-right"><p class="font-bold text-emerald-600">${formatRupiah(t.total_harga)}</p><p class="text-[10px] text-gray-400">${t.jenis_sampah?.nama_sampah}</p></div></div>`;
+            });
+        }
 
         // --- NASABAH FUNCTIONS ---
         async function loadNasabahDashboard() {
@@ -475,11 +504,30 @@
             document.getElementById('nasabah-total-setor').textContent=tb.toFixed(1)+' Kg';
         }
 
-        // --- UTILS ---
-        async function handleImportOfftaker(input){const f=input.files[0];if(!f)return;const t=await f.text();const l=t.split('\n').slice(1);let c=0;for(let ln of l){const[n,h]=ln.split(',');if(n&&h){const hv=parseFloat(h.replace(/[^0-9.-]+/g,""));const j=jenisSampahList.find(x=>x.nama_sampah.toLowerCase().includes(n.trim().toLowerCase()));if(j&&!isNaN(hv)){await supabaseClient.from('harga_offtaker').upsert({jenis_sampah_id:j.id,bank_sampah_id:null,harga_per_kg:hv},{onConflict:'jenis_sampah_id, bank_sampah_id'});c++;}}}alert(`Import ${c} data sukses!`);loadTableHargaOfftaker();input.value='';}
-        function exportOfftakerCSV(){let c='Nama Sampah,Harga Per Kg\n';jenisSampahList.forEach(j=>{c+=`"${j.nama_sampah}",${hargaOfftakerMap[j.id]||0}\n`;});const b=new Blob([c],{type:'text/csv'});const u=window.URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='harga_offtaker_rajin.csv';a.click();}
-        function toggleModal(id){document.getElementById(id).classList.toggle('hidden-section');}
+        // --- EXPORT CSV (SUDAH BERFUNGSI) ---
+        function exportOfftakerCSV(){
+            let csv = '\uFEFFNama Sampah,Harga Per Kg\n'; // BOM buat Excel support UTF-8
+            jenisSampahList.forEach(j=>{
+                const harga = hargaOfftakerMap[j.id] || 0;
+                csv += `"${j.nama_sampah}",${harga}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Harga_Offtaker_RAJIN_${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
 
+        async function handleImportOfftaker(input){
+            const f=input.files[0];if(!f)return;const t=await f.text();const l=t.split('\n').slice(1);let c=0;
+            for(let ln of l){const[n,h]=ln.split(',');if(n&&h){const hv=parseFloat(h.replace(/[^0-9.-]+/g,""));const j=jenisSampahList.find(x=>x.nama_sampah.toLowerCase().includes(n.trim().toLowerCase()));if(j&&!isNaN(hv)){await supabaseClient.from('harga_offtaker').upsert({jenis_sampah_id:j.id,bank_sampah_id:null,harga_per_kg:hv},{onConflict:'jenis_sampah_id, bank_sampah_id'});c++;}}}
+            alert(`Import ${c} data sukses!`);loadTableHargaOfftaker();input.value='';
+        }
+
+        function toggleModal(id){document.getElementById(id).classList.toggle('hidden-section');}
         window.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
