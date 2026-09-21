@@ -38,53 +38,23 @@
 
             <!-- FORM LOGIN -->
             <form id="login-form" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Email</label>
-                    <input type="email" id="login-email" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="admin@rajin.id">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Password</label>
-                    <input type="password" id="login-password" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="••••••••">
-                </div>
-                <button type="submit" id="btn-login" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-lg transition shadow-lg flex items-center justify-center gap-2">
-                    <span>Masuk Dashboard</span> <i class="fas fa-arrow-right"></i>
-                </button>
+                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Email</label><input type="email" id="login-email" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="admin@rajin.id"></div>
+                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Password</label><input type="password" id="login-password" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="••••••••"></div>
+                <button type="submit" id="btn-login" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-lg transition shadow-lg flex items-center justify-center gap-2"><span>Masuk Dashboard</span> <i class="fas fa-arrow-right"></i></button>
             </form>
 
-            <!-- FORM REGISTRASI (Awalnya Hidden) -->
+            <!-- FORM REGISTRASI -->
             <form id="register-form" class="space-y-4 hidden-section">
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Nama Lengkap</label>
-                    <input type="text" id="reg-nama" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="Contoh: Budi Santoso">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">No HP / WhatsApp</label>
-                    <input type="tel" id="reg-hp" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="0812...">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Alamat Lengkap</label>
-                    <textarea id="reg-alamat" required rows="2" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="RT/RW, Kelurahan, Kecamatan..."></textarea>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Email</label>
-                    <input type="email" id="reg-email" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="email@contoh.com">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Password</label>
-                    <input type="password" id="reg-password" required minlength="6" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="Minimal 6 karakter">
-                </div>
-                <button type="submit" id="btn-register" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition shadow-lg flex items-center justify-center gap-2">
-                    <span>Daftar & Menunggu Approval</span> <i class="fas fa-user-plus"></i>
-                </button>
-                <p class="text-[10px] text-gray-400 text-center mt-2 leading-relaxed">
-                    Akun akan aktif setelah disetujui oleh Admin atau Pengurus Bank Sampah.<br>
-                    Pastikan data yang diisi benar.
-                </p>
+                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Nama Lengkap</label><input type="text" id="reg-nama" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="Contoh: Budi Santoso"></div>
+                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">No HP / WhatsApp</label><input type="tel" id="reg-hp" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="0812..."></div>
+                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Alamat Lengkap</label><textarea id="reg-alamat" required rows="2" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="RT/RW, Kelurahan, Kecamatan..."></textarea></div>
+                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Email</label><input type="email" id="reg-email" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="email@contoh.com"></div>
+                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Password</label><input type="password" id="reg-password" required minlength="6" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="Minimal 6 karakter"></div>
+                <button type="submit" id="btn-register" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition shadow-lg flex items-center justify-center gap-2"><span>Daftar & Menunggu Approval</span> <i class="fas fa-user-plus"></i></button>
+                <p class="text-[10px] text-gray-400 text-center mt-2 leading-relaxed">Akun akan aktif setelah disetujui oleh Admin atau Pengurus Bank Sampah.</p>
             </form>
             
-            <div class="mt-6 text-center text-xs text-gray-400 border-t pt-4">
-                <p>Butuh bantuan? Hubungi Admin Pusat RAJIN.</p>
-            </div>
+            <div class="mt-6 text-center text-xs text-gray-400 border-t pt-4"><p>Butuh bantuan? Hubungi Admin Pusat RAJIN.</p></div>
         </div>
     </div>
 
@@ -93,7 +63,7 @@
         <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center active-section border-t-4 border-yellow-500">
             <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-600 text-3xl"><i class="fas fa-hourglass-half"></i></div>
             <h2 class="text-2xl font-bold text-gray-900 mb-2">Menunggu Persetujuan</h2>
-            <p class="text-gray-600 mb-6">Akun Anda sedang ditinjau oleh Admin atau Pengurus Bank Sampah. Silakan tunggu hingga status akun Anda menjadi aktif.</p>
+            <p class="text-gray-600 mb-6">Akun Anda sedang ditinjau. Silakan tunggu hingga status aktif.</p>
             <button onclick="doLogout()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg transition">Keluar</button>
         </div>
     </div>
@@ -122,12 +92,24 @@
             
             <!-- ADMIN DASHBOARD -->
             <div id="admin-dashboard" class="hidden-section space-y-6">
-                <!-- Stats Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-emerald-500"><p class="text-xs font-bold text-gray-400 uppercase">Total Bank Sampah</p><h3 class="text-3xl font-bold text-gray-900 mt-1" id="stat-total-bs">...</h3></div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500"><p class="text-xs font-bold text-gray-400 uppercase">Transaksi Hari Ini</p><h3 class="text-3xl font-bold text-gray-900 mt-1" id="stat-transaksi-hari">...</h3></div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-500"><p class="text-xs font-bold text-gray-400 uppercase">Penjualan Offtaker</p><h3 class="text-3xl font-bold text-gray-900 mt-1" id="stat-penjualan">...</h3></div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-500"><p class="text-xs font-bold text-gray-400 uppercase">Stok Gudang Pusat</p><h3 class="text-3xl font-bold text-gray-900 mt-1" id="stat-stok-gudang">... Kg</h3></div>
+                <!-- Stats Cards (INTERAKTIF & REAL-TIME) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-emerald-500 hover:shadow-md transition">
+                        <p class="text-xs font-bold text-gray-400 uppercase">Total Bank Sampah</p>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-1" id="stat-total-bs">...</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 hover:shadow-md transition">
+                        <p class="text-xs font-bold text-gray-400 uppercase">Transaksi Hari Ini</p>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-1" id="stat-transaksi-hari">...</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-500 hover:shadow-md transition">
+                        <p class="text-xs font-bold text-gray-400 uppercase">Penjualan Offtaker</p>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-1" id="stat-penjualan">...</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-orange-500 hover:shadow-md transition">
+                        <p class="text-xs font-bold text-gray-400 uppercase">Stok Gudang Pusat</p>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-1" id="stat-stok-gudang">... Kg</h3>
+                    </div>
                 </div>
 
                 <!-- Tabs Navigation -->
@@ -149,8 +131,22 @@
 
                 <!-- Tab: Harga Offtaker -->
                 <div id="tab-harga" class="admin-content hidden-section bg-white rounded-b-xl shadow-sm p-6">
-                    <div class="flex justify-between items-center mb-6"><h3 class="text-lg font-bold text-gray-900">Master Harga Offtaker</h3><div class="flex space-x-2"><label class="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 flex items-center"><i class="fas fa-upload mr-2"></i>Import CSV<input type="file" id="csv-import-offtaker" accept=".csv" class="hidden" onchange="handleImportOfftaker(this)"></label><button onclick="exportOfftakerCSV()" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700"><i class="fas fa-download mr-2"></i>Export</button></div></div>
-                    <div class="overflow-x-auto max-h-[500px] rounded-lg border border-gray-200"><table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50 sticky top-0"><tr><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Jenis Sampah</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Harga Default</th></tr></thead><tbody id="table-offtaker-body" class="bg-white divide-y divide-gray-200 text-sm"></tbody></table></div>
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-bold text-gray-900">Master Harga Offtaker</h3>
+                        <div class="flex space-x-2">
+                            <label class="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 flex items-center shadow-sm transition">
+                                <i class="fas fa-upload mr-2"></i> Import CSV
+                                <input type="file" id="csv-import-offtaker" accept=".csv" class="hidden" onchange="handleImportOfftaker(this)">
+                            </label>
+                            <button onclick="exportOfftakerCSV()" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700 shadow-sm transition"><i class="fas fa-download mr-2"></i> Export</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto max-h-[500px] rounded-lg border border-gray-200">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50 sticky top-0 z-10"><tr><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Jenis Sampah</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Harga Default (Rp/Kg)</th></tr></thead>
+                            <tbody id="table-offtaker-body" class="bg-white divide-y divide-gray-200 text-sm"></tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- Tab: Pengambilan dari Bank Sampah -->
@@ -210,7 +206,7 @@
         <footer class="bg-white border-t border-gray-200 py-6 mt-auto"><div class="max-w-7xl mx-auto px-4 flex justify-between items-center"><div class="flex items-center gap-2"><img src="logo.png" class="h-8 w-8 object-contain"><div><p class="text-sm font-bold text-emerald-800">RAJIN</p><p class="text-[10px] text-gray-500">Rezeki Amanah Jaya Indonesia</p></div></div><p class="text-xs text-gray-400">&copy; 2026 CV Rezeki Amanah Jaya Group.</p></div></footer>
     </div>
 
-    <!-- MODAL ADD BS -->
+    <!-- MODALS -->
     <div id="modal-add-bs" class="hidden-section fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 active-section border-t-4 border-emerald-600">
             <h3 class="text-lg font-bold mb-4">Tambah Bank Sampah</h3>
@@ -220,6 +216,18 @@
                 <input type="text" id="new-bs-hp" placeholder="No HP" class="w-full border rounded-lg p-2.5">
                 <div class="flex justify-end space-x-3 pt-4"><button type="button" onclick="toggleModal('modal-add-bs')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Batal</button><button type="submit" class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold">Simpan</button></div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL APPROVE USER -->
+    <div id="modal-approve-user" class="hidden-section fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 active-section border-t-4 border-blue-600">
+            <h3 class="text-lg font-bold mb-4">Approve User</h3>
+            <input type="hidden" id="approve-user-id">
+            <div class="space-y-4">
+                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Role</label><select id="approve-role" class="w-full border rounded-lg p-2.5"><option value="pengurus">Pengurus</option><option value="nasabah">Nasabah</option></select></div>
+                <div class="flex justify-end space-x-3 pt-4"><button type="button" onclick="toggleModal('modal-approve-user')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Batal</button><button onclick="submitApproveUser()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold">Approve</button></div>
+            </div>
         </div>
     </div>
 
@@ -242,7 +250,6 @@
             else showSection('login-page');
         }
 
-        // FUNGSI GANTI TAB LOGIN / DAFTAR
         function switchAuthTab(tab) {
             const loginForm = document.getElementById('login-form');
             const registerForm = document.getElementById('register-form');
@@ -262,7 +269,6 @@
             }
         }
 
-        // HANDLE LOGIN
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btn-login');
@@ -273,7 +279,6 @@
             else await handleLoginSuccess(data.user);
         });
 
-        // HANDLE REGISTRASI BARU
         document.getElementById('register-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('btn-register');
@@ -286,40 +291,25 @@
             const alamat = document.getElementById('reg-alamat').value;
 
             try {
-                // 1. Sign Up ke Auth
                 const { data, error: authError } = await supabaseClient.auth.signUp({ email, password });
                 if (authError) throw authError;
 
-                // 2. Insert ke tabel profiles dengan role 'pending'
                 const { error: profileError } = await supabaseClient.from('profiles').insert({
-                    id: data.user.id,
-                    role: 'pending',
-                    status: 'active', // Status active tapi role pending biar bisa dibaca saat login
-                    nama_lengkap: nama,
-                    no_hp: hp,
-                    alamat: alamat,
-                    bank_sampah_id: null
+                    id: data.user.id, role: 'pending', status: 'active',
+                    nama_lengkap: nama, no_hp: hp, alamat: alamat, bank_sampah_id: null
                 });
-
                 if (profileError) throw profileError;
 
                 alert('Pendaftaran berhasil! Akun Anda sedang menunggu persetujuan Admin/Pengurus.');
-                switchAuthTab('login'); // Balik ke tab login
-                e.target.reset();
-
-            } catch (err) {
-                alert('Gagal mendaftar: ' + err.message);
-            } finally {
-                btn.innerHTML = '<span>Daftar & Menunggu Approval</span> <i class="fas fa-user-plus"></i>'; btn.disabled = false;
-            }
+                switchAuthTab('login'); e.target.reset();
+            } catch (err) { alert('Gagal mendaftar: ' + err.message); } 
+            finally { btn.innerHTML = '<span>Daftar & Menunggu Approval</span> <i class="fas fa-user-plus"></i>'; btn.disabled = false; }
         });
 
         async function handleLoginSuccess(user) {
             currentUser = user;
             const { data: profile, error: profileError } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
             if (profileError || !profile) { alert('Error profil: ' + (profileError?.message || 'Tidak ditemukan')); return; }
-            
-            // Cek jika masih pending
             if (profile.role === 'pending') { showSection('pending-page'); return; }
             
             currentProfile = profile;
@@ -336,7 +326,7 @@
         function showSection(id) { ['login-page', 'pending-page', 'app-container'].forEach(s => { const el = document.getElementById(s); if(el) { el.classList.add('hidden-section'); el.classList.remove('active-section'); } }); const t = document.getElementById(id); if(t) { t.classList.remove('hidden-section'); t.classList.add('active-section'); } }
 
         async function loadMasterData() {
-            console.log(" Memulai loadMasterData...");
+            console.log("📦 Memulai loadMasterData...");
             const { data: js } = await supabaseClient.from('jenis_sampah').select('*').order('nama_sampah');
             jenisSampahList = js || [];
             console.log(`✅ Berhasil load ${jenisSampahList.length} jenis sampah`);
@@ -357,11 +347,29 @@
             console.log("📊 Memulai loadAdminDashboard...");
             document.getElementById('admin-dashboard').classList.remove('hidden-section');
             
+            // Hitung Statistik Real-time
             const { count: countBs } = await supabaseClient.from('bank_sampah').select('*', { count: 'exact', head: true });
             document.getElementById('stat-total-bs').textContent = countBs || 0;
-            document.getElementById('stat-transaksi-hari').textContent = "0"; 
-            document.getElementById('stat-penjualan').textContent = "Rp 0"; 
-            document.getElementById('stat-stok-gudang').textContent = "0 Kg"; 
+
+            // Transaksi Hari Ini (kategori 'beli' = pengambilan admin)
+            const today = new Date().toISOString().split('T')[0];
+            const { count: countTrx } = await supabaseClient.from('transaksi').select('*', { count: 'exact', head: true }).gte('tanggal_transaksi', today + 'T00:00:00').lte('tanggal_transaksi', today + 'T23:59:59');
+            document.getElementById('stat-transaksi-hari').textContent = countTrx || 0;
+
+            // Total Penjualan Offtaker
+            const { data: salesData } = await supabaseClient.from('penjualan').select('total_pendapatan');
+            const totalSales = (salesData || []).reduce((sum, item) => sum + (item.total_pendapatan || 0), 0);
+            document.getElementById('stat-penjualan').textContent = formatRupiah(totalSales);
+
+            // Stok Gudang Pusat = Total Berat Pengambilan - Total Berat Penjualan
+            const { data: ambilData } = await supabaseClient.from('transaksi').select('berat_kg').eq('kategori_transaksi', 'beli');
+            const totalAmbil = (ambilData || []).reduce((sum, item) => sum + (item.berat_kg || 0), 0);
+            
+            const { data: jualData } = await supabaseClient.from('penjualan').select('berat_kg');
+            const totalJual = (jualData || []).reduce((sum, item) => sum + (item.berat_kg || 0), 0);
+            
+            const stokGudang = totalAmbil - totalJual;
+            document.getElementById('stat-stok-gudang').textContent = stokGudang.toFixed(1) + ' Kg';
 
             loadTableBankSampah(); 
             loadTableHargaOfftaker(); 
@@ -396,20 +404,69 @@
             const { data } = await supabaseClient.from('profiles').select('*').eq('role', 'pending');
             const tb = document.getElementById('table-pending-admin'); tb.innerHTML = '';
             if (!data || data.length === 0) { tb.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-400">Tidak ada permintaan approval.</td></tr>'; return; }
-            (data||[]).forEach(u => { tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${u.nama_lengkap}</td><td class="px-6 py-4 text-gray-600">${u.email || '-'}</td><td class="px-6 py-4"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-bold">Pending</span></td><td class="px-6 py-4"><button onclick="approveUser('${u.id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">Approve</button></td></tr>`; });
+            (data||[]).forEach(u => { tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${u.nama_lengkap}</td><td class="px-6 py-4 text-gray-600">${u.email || '-'}</td><td class="px-6 py-4"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-bold">Pending</span></td><td class="px-6 py-4"><button onclick="openApproveModal('${u.id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">Approve</button></td></tr>`; });
         }
 
-        // FUNGSI APPROVE USER (SIMPLE)
-        async function approveUser(userId) {
-            const role = prompt("Masukkan role untuk user ini (ketik 'pengurus' atau 'nasabah'):", "nasabah");
-            if (!role) return;
+        function openApproveModal(userId) {
+            document.getElementById('approve-user-id').value = userId;
+            toggleModal('modal-approve-user');
+        }
+
+        async function submitApproveUser() {
+            const userId = document.getElementById('approve-user-id').value;
+            const role = document.getElementById('approve-role').value;
             
             const { error } = await supabaseClient.from('profiles').update({ role: role }).eq('id', userId);
             if (error) alert('Gagal approve: ' + error.message);
             else {
                 alert('User berhasil di-approve sebagai ' + role);
+                toggleModal('modal-approve-user');
                 loadPendingUsersAdmin();
             }
+        }
+
+        // IMPORT CSV HARGA OFFTAKER
+        async function handleImportOfftaker(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const text = await file.text();
+            const lines = text.split('\n').slice(1); // Skip header
+            
+            let successCount = 0;
+            for (let line of lines) {
+                const [nama, hargaStr] = line.split(',');
+                if (nama && hargaStr) {
+                    const harga = parseFloat(hargaStr.replace(/[^0-9.-]+/g,""));
+                    const js = jenisSampahList.find(j => j.nama_sampah.toLowerCase().includes(nama.trim().toLowerCase()));
+                    if (js && !isNaN(harga)) {
+                        await supabaseClient.from('harga_offtaker').upsert({ 
+                            jenis_sampah_id: js.id, 
+                            bank_sampah_id: null, 
+                            harga_per_kg: harga 
+                        }, { onConflict: 'jenis_sampah_id, bank_sampah_id' });
+                        successCount++;
+                    }
+                }
+            }
+            alert(`Berhasil import ${successCount} data harga!`);
+            loadTableHargaOfftaker();
+            input.value = ''; // Reset input
+        }
+
+        function exportOfftakerCSV() {
+            let csv = 'Nama Sampah,Harga Per Kg\n';
+            jenisSampahList.forEach(js => {
+                const harga = hargaOfftakerMap[js.id] || 0;
+                csv += `"${js.nama_sampah}",${harga}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'harga_offtaker_rajin.csv';
+            a.click();
         }
 
         // FUNGSI BARU: LOAD DROPDOWNS UNTUK INPUT ADMIN
@@ -425,9 +482,10 @@
             
             jenisSampahList.forEach(js => {
                 const hargaDefault = hargaOfftakerMap[js.id] || 0;
-                const opt = `<option value="${js.id}" data-harga="${hargaDefault}">${js.nama_sampah}</option>`;
-                selJenisAmbil.innerHTML += opt;
-                selJenisJual.innerHTML += opt;
+                const optAmbil = `<option value="${js.id}" data-harga="${hargaDefault}">${js.nama_sampah}</option>`;
+                const optJual = `<option value="${js.id}" data-harga="${hargaDefault}">${js.nama_sampah}</option>`;
+                selJenisAmbil.innerHTML += optAmbil;
+                selJenisJual.innerHTML += optJual;
             });
 
             selJenisAmbil.addEventListener('change', function() {
@@ -459,7 +517,6 @@
             document.getElementById('preview-jual').textContent = formatRupiah(berat * harga);
         }
 
-        // FORM PENGAMBILAN
         document.getElementById('form-pengambilan').addEventListener('submit', async (e) => {
             e.preventDefault();
             const bsId = document.getElementById('ambil-bs').value;
@@ -480,10 +537,10 @@
                 alert('Pengambilan berhasil disimpan!');
                 e.target.reset(); document.getElementById('preview-ambil').textContent = 'Rp 0';
                 loadRiwayatPengambilan();
+                loadAdminDashboard(); // Refresh stats
             }
         });
 
-        // FORM PENJUALAN
         document.getElementById('form-penjualan').addEventListener('submit', async (e) => {
             e.preventDefault();
             const pembeli = document.getElementById('jual-pembeli').value;
@@ -504,6 +561,7 @@
                 alert('Penjualan berhasil disimpan!');
                 e.target.reset(); document.getElementById('preview-jual').textContent = 'Rp 0';
                 loadRiwayatPenjualan();
+                loadAdminDashboard(); // Refresh stats
             }
         });
 
@@ -525,13 +583,12 @@
             });
         }
 
-        // UTILS
         function toggleModal(id){document.getElementById(id).classList.toggle('hidden-section');}
         document.getElementById('form-add-bs').addEventListener('submit', async (e) => {
             e.preventDefault();
             const { error } = await supabaseClient.from('bank_sampah').insert({ nama_bank: document.getElementById('new-bs-nama').value, alamat: document.getElementById('new-bs-alamat').value, no_hp: document.getElementById('new-bs-hp').value });
             if (error) alert('Gagal: ' + error.message);
-            else { alert('Berhasil!'); toggleModal('modal-add-bs'); loadTableBankSampah(); }
+            else { alert('Berhasil!'); toggleModal('modal-add-bs'); loadTableBankSampah(); loadAdminDashboard(); }
         });
 
         window.addEventListener('DOMContentLoaded', initApp);
