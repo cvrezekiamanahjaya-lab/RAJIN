@@ -3,697 +3,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RAJIN - Rezeki Amanah Jaya Indonesia</title>
-    <link rel="icon" href="logo.png" type="image/png">
-    
-    <!-- Tailwind CSS -->
+    <title>RAJIN - Admin Dashboard</title>
+    <!-- Tailwind CSS CDN untuk kemudahan styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <style>
-        ::-webkit-scrollbar { width: 8px; } 
-        ::-webkit-scrollbar-track { background: #f1f1f1; } 
-        ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 4px; }
-        .hidden-section { display: none !important; } 
-        .active-section { display: block; animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .chat-enter { animation: slideUp 0.3s ease-out forwards; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col relative">
+<body class="bg-gray-100 font-sans antialiased text-gray-800">
 
-    <!-- ================= LOGIN & REGISTER PAGE ================= -->
-    <div id="login-page" class="flex-grow flex items-center justify-center p-4 bg-gradient-to-br from-emerald-800 to-teal-900 relative overflow-hidden">
-        <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 30px 30px;"></div>
-        
-        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md chat-enter relative z-10 border-t-4 border-emerald-600">
-            <div class="text-center mb-6">
-                <img src="logo.png" alt="Logo RAJIN" class="w-24 h-24 mx-auto mb-4 drop-shadow-md object-contain">
-                <h1 class="text-3xl font-bold text-emerald-900 tracking-tight">RAJIN</h1>
-                <p class="text-sm text-gray-500 mt-1 font-medium">Rezeki Amanah Jaya Indonesia</p>
-                <div class="mt-3 inline-block px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100"><p class="text-[10px] text-emerald-700 font-semibold uppercase tracking-wide">Platform Bank Sampah Digital</p></div>
+    <!-- Top Navigation Header -->
+    <header class="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xl">
+                R
             </div>
-
-            <!-- Tab Switcher -->
-            <div class="flex border-b border-gray-200 mb-6">
-                <button onclick="switchAuthTab('login')" id="tab-login" class="flex-1 py-2 text-sm font-bold text-emerald-600 border-b-2 border-emerald-600 transition">Masuk</button>
-                <button onclick="switchAuthTab('register')" id="tab-register" class="flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition">Daftar Akun Baru</button>
+            <div>
+                <h1 class="text-xl font-bold text-gray-900 tracking-tight leading-none">RAJIN</h1>
+                <p class="text-xs text-gray-500 mt-1 font-medium">REZEKI AMANAH JAYA INDONESIA</p>
             </div>
-
-            <!-- Form Login -->
-            <form id="login-form" class="space-y-4">
-                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Email</label><input type="email" id="login-email" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="email@rajin.id"></div>
-                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Password</label><input type="password" id="login-password" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="••••••••"></div>
-                <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-lg transition shadow-lg flex items-center justify-center gap-2"><span>Masuk Dashboard</span><i class="fas fa-arrow-right text-sm"></i></button>
-            </form>
-
-            <!-- Form Register -->
-            <form id="register-form" class="space-y-4 hidden-section">
-                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Nama Lengkap</label><input type="text" id="reg-nama" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50"></div>
-                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">No HP</label><input type="tel" id="reg-hp" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50"></div>
-                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Alamat Lengkap</label><input type="text" id="reg-alamat" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50"></div>
-                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Email</label><input type="email" id="reg-email" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50"></div>
-                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Password</label><input type="password" id="reg-password" required minlength="6" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50"></div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition shadow-lg flex items-center justify-center gap-2"><span>Daftar & Menunggu Approval</span><i class="fas fa-user-plus text-sm"></i></button>
-                <p class="text-[10px] text-gray-400 text-center mt-2 leading-relaxed">Akun akan berstatus <b>Pending</b> hingga disetujui oleh Admin atau Pengurus Bank Sampah.</p>
-            </form>
-            
-            <div class="mt-6 text-center text-xs text-gray-400 border-t pt-4"><p>Butuh bantuan? Hubungi Admin Pusat RAJIN.</p></div>
         </div>
-    </div>
-
-    <!-- ================= HALAMAN PENDING ================= -->
-    <div id="pending-page" class="hidden-section flex-grow flex items-center justify-center p-4 bg-gray-100">
-        <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center chat-enter border-t-4 border-yellow-500">
-            <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-600 text-3xl"><i class="fas fa-hourglass-half"></i></div>
-            <h2 class="text-2xl font-bold text-gray-900 mb-2">Menunggu Persetujuan</h2>
-            <p class="text-gray-600 mb-6">Akun Anda sedang ditinjau. Silakan hubungi Pengurus Bank Sampah atau Admin Pusat untuk mengaktifkan akun Anda.</p>
-            <button onclick="doLogout()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg transition">Keluar</button>
+        <div class="flex items-center gap-4">
+            <div class="text-right">
+                <span class="block text-sm font-bold text-gray-800">Palung</span>
+                <span class="inline-block px-2 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-800 rounded">ADMIN</span>
+            </div>
+            <button class="p-2 text-gray-500 hover:text-red-600 transition-colors" title="Logout">
+                <i class="fa-solid fa-right-from-bracket text-lg"></i>
+            </button>
         </div>
-    </div>
+    </header>
 
-    <!-- ================= MAIN APP DASHBOARD ================= -->
-    <div id="app-container" class="hidden-section flex-grow flex flex-col">
-        <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-30">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-                    <div class="flex items-center gap-3">
-                        <img src="logo.png" alt="Logo" class="h-10 w-10 object-contain drop-shadow-sm">
-                        <div class="leading-tight"><h1 class="text-lg font-bold text-emerald-900 leading-none">RAJIN</h1><span class="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">Rezeki Amanah Jaya Indonesia</span></div>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <div class="hidden md:block text-right border-r border-gray-200 pr-4">
-                            <p id="user-name" class="text-sm font-bold text-gray-800">User Name</p>
-                            <p id="user-role" class="text-[10px] text-emerald-600 font-bold uppercase tracking-wide bg-emerald-50 px-2 py-0.5 rounded inline-block">Role</p>
-                        </div>
-                        <button onclick="doLogout()" class="text-gray-400 hover:text-red-600 transition p-2 rounded-full hover:bg-red-50"><i class="fas fa-sign-out-alt text-xl"></i></button>
-                    </div>
-                </div>
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-6 py-8">
+
+        <!-- Top Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Card 1: Total Bank Sampah -->
+            <div class="bg-white p-6 rounded-xl border-l-4 border-emerald-500 shadow-sm flex flex-col justify-between">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">TOTAL BANK SAMPAH</span>
+                <div class="text-4xl font-extrabold text-gray-900 mt-2">2</div>
             </div>
-        </nav>
 
-        <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+            <!-- Card 2: Transaksi Hari Ini -->
+            <div class="bg-white p-6 rounded-xl border-l-4 border-blue-500 shadow-sm flex flex-col justify-between">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">TRANSAKSI HARI INI</span>
+                <div class="text-4xl font-extrabold text-gray-900 mt-2">1</div>
+            </div>
+
+            <!-- Card 3: Penjualan Offtaker -->
+            <div class="bg-white p-6 rounded-xl border-l-4 border-purple-500 shadow-sm flex flex-col justify-between">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">PENJUALAN OFFTAKER</span>
+                <div class="text-4xl font-extrabold text-gray-900 mt-2">Rp 0</div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
             
-            <!-- ADMIN DASHBOARD -->
-            <div id="admin-dashboard" class="hidden-section space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-emerald-500"><p class="text-xs font-bold text-gray-400 uppercase">Total Bank Sampah</p><h3 class="text-3xl font-bold text-gray-900 mt-1" id="stat-total-bs">0</h3></div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500"><p class="text-xs font-bold text-gray-400 uppercase">Transaksi Hari Ini</p><h3 class="text-3xl font-bold text-gray-900 mt-1" id="stat-transaksi-hari">0</h3></div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-500"><p class="text-xs font-bold text-gray-400 uppercase">Penjualan Offtaker</p><h3 class="text-3xl font-bold text-gray-900 mt-1" id="stat-penjualan">Rp 0</h3></div>
-                </div>
-                
-                <div class="border-b border-gray-200 bg-white rounded-t-xl px-6 pt-4">
-                    <nav class="-mb-px flex space-x-8">
-                        <button onclick="switchAdminTab('bs')" class="admin-tab active-tab border-emerald-500 text-emerald-600 whitespace-nowrap py-3 px-1 border-b-2 font-bold text-sm">Bank Sampah</button>
-                        <button onclick="switchAdminTab('harga')" class="admin-tab border-transparent text-gray-500 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">Harga Offtaker</button>
-                        <button onclick="switchAdminTab('users')" class="admin-tab border-transparent text-gray-500 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">Approval User (<span id="count-pending-admin">0</span>)</button>
-                    </nav>
-                </div>
+            <!-- Navigation Tabs -->
+            <div class="border-b border-gray-200 px-6 pt-4 flex gap-8">
+                <button class="pb-4 font-semibold text-emerald-600 border-b-2 border-emerald-600">
+                    Bank Sampah
+                </button>
+                <button class="pb-4 font-medium text-gray-500 hover:text-gray-700">
+                    Harga Offtaker
+                </button>
+                <button class="pb-4 font-medium text-gray-500 hover:text-gray-700 flex items-center gap-2">
+                    Approval User <span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+                </button>
+            </div>
 
-                <div id="tab-bs" class="admin-content bg-white rounded-b-xl shadow-sm p-6">
-                    <div class="flex justify-between items-center mb-6"><h3 class="text-lg font-bold text-gray-900">Daftar Bank Sampah</h3><button onclick="toggleModal('modal-add-bs')" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700"><i class="fas fa-plus mr-2"></i>Tambah Baru</button></div>
-                    <div class="overflow-x-auto rounded-lg border border-gray-200"><table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Nama</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Alamat</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Kontak</th></tr></thead><tbody id="table-bs-body" class="bg-white divide-y divide-gray-200 text-sm"></tbody></table></div>
-                </div>
-
-                <div id="tab-harga" class="admin-content hidden-section bg-white rounded-b-xl shadow-sm p-6">
-                    <div class="flex justify-between items-center mb-6"><h3 class="text-lg font-bold text-gray-900">Master Harga Offtaker</h3><div class="flex space-x-2"><label class="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 flex items-center"><i class="fas fa-upload mr-2"></i>Import CSV<input type="file" id="csv-import-offtaker" accept=".csv" class="hidden" onchange="handleImportOfftaker(this)"></label><button onclick="exportOfftakerCSV()" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700"><i class="fas fa-download mr-2"></i>Export</button></div></div>
-                    <div class="overflow-x-auto max-h-[500px] rounded-lg border border-gray-200"><table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50 sticky top-0"><tr><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Jenis Sampah</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Harga Default</th></tr></thead><tbody id="table-offtaker-body" class="bg-white divide-y divide-gray-200 text-sm"></tbody></table></div>
-                </div>
-
-                <div id="tab-users" class="admin-content hidden-section bg-white rounded-b-xl shadow-sm p-6">
-                    <h3 class="text-lg font-bold text-gray-900 mb-6">Permintaan Approval User (Pending)</h3>
-                    <div class="overflow-x-auto rounded-lg border border-gray-200">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Nama</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Email</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">No HP</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Aksi</th></tr></thead>
-                            <tbody id="table-pending-admin" class="bg-white divide-y divide-gray-200 text-sm"></tbody>
-                        </table>
+            <!-- Tab Content Area -->
+            <div class="p-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <h2 class="text-lg font-bold text-gray-800">Daftar Bank Sampah</h2>
+                    <div class="flex gap-2">
+                        <button class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition flex items-center gap-2 shadow-sm">
+                            <i class="fa-solid fa-plus"></i> Tambah Bank Sampah
+                        </button>
                     </div>
+                </div>
+
+                <!-- Table Bank Sampah -->
+                <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                    <table class="w-full text-left text-sm text-gray-600">
+                        <thead class="bg-gray-50 text-xs text-gray-700 uppercase border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-3 font-semibold">Nama</th>
+                                <th class="px-6 py-3 font-semibold">Alamat</th>
+                                <th class="px-6 py-3 font-semibold">Kontak</th>
+                                <th class="px-6 py-3 font-semibold text-right">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 bg-white">
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 font-bold text-gray-900">Bank Sampah Flamingo</td>
+                                <td class="px-6 py-4">Flamingo</td>
+                                <td class="px-6 py-4">089509441945</td>
+                                <td class="px-6 py-4 text-right">
+                                    <button class="text-emerald-600 hover:underline font-semibold text-xs bg-emerald-50 px-3 py-1.5 rounded border border-emerald-200">
+                                        + Input Pengambilan
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4 font-bold text-gray-900">Bank Sampah Induk Tangerang</td>
+                                <td class="px-6 py-4">Jl. Raya Serang KM. 5, Tangerang</td>
+                                <td class="px-6 py-4">08123456789</td>
+                                <td class="px-6 py-4 text-right">
+                                    <button class="text-emerald-600 hover:underline font-semibold text-xs bg-emerald-50 px-3 py-1.5 rounded border border-emerald-200">
+                                        + Input Pengambilan
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: Riwayat Pengambilan Terakhir (Sesuai Data Input) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- Riwayat Pengambilan dari Bank Sampah -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-md font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fa-solid fa-truck-pickup text-emerald-600"></i> Pengambilan dari Bank Sampah
+                    </h3>
+                    <span class="text-xs font-semibold bg-emerald-100 text-emerald-800 px-2 py-1 rounded">Terbaru</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-600">
+                        <thead class="bg-gray-50 text-xs text-gray-500 uppercase border-b">
+                            <tr>
+                                <th class="py-2 px-3">Sumber</th>
+                                <th class="py-2 px-3">Jenis Sampah</th>
+                                <th class="py-2 px-3 text-right">Berat (Kg)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            <tr>
+                                <td class="py-3 px-3 font-semibold text-gray-900">Bank Sampah Flamingo</td>
+                                <td class="py-3 px-3">Plastik Campur / Anorganik</td>
+                                <td class="py-3 px-3 text-right font-bold text-emerald-600">150 Kg</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <!-- PENGURUS DASHBOARD LENGKAP -->
-            <div id="pengurus-dashboard" class="hidden-section space-y-6">
-                <!-- Banner Header & Statistik Lengkap -->
-                <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-lg">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <div>
-                            <h2 class="text-xl font-bold" id="pengurus-nama-bs">Bank Sampah Saya</h2>
-                            <p class="text-emerald-100 text-sm">Kelola Transaksi Setor, Tarik Saldo, & Penjualan PDU</p>
-                        </div>
-                        <div class="grid grid-cols-2 md:grid-cols-2 gap-3 w-full md:w-auto">
-                            <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20 text-right">
-                                <p class="text-[10px] text-emerald-100 uppercase font-bold">Total Tabungan Nasabah</p>
-                                <h3 class="text-xl font-bold" id="pengurus-total-tabungan">Rp 0</h3>
-                            </div>
-                            <div class="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20 text-right">
-                                <p class="text-[10px] text-emerald-100 uppercase font-bold">Total Pengambilan Dana</p>
-                                <h3 class="text-xl font-bold text-yellow-300" id="pengurus-total-penarikan">Rp 0</h3>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- KOLOM KIRI: SETOR, TARIK & JUAL KE PDU -->
-                    <div class="lg:col-span-2 space-y-6">
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div class="flex border-b border-gray-200 text-xs sm:text-sm">
-                                <button onclick="switchTrxTab('setor')" id="tab-setor" class="flex-1 py-3 font-bold text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50/50"><i class="fas fa-plus-circle mr-1"></i>Input Setor</button>
-                                <button onclick="switchTrxTab('tarik')" id="tab-tarik" class="flex-1 py-3 font-medium text-gray-500 hover:text-gray-700"><i class="fas fa-hand-holding-usd mr-1"></i>Tarik Saldo</button>
-                                <button onclick="switchTrxTab('pdu')" id="tab-pdu" class="flex-1 py-3 font-medium text-gray-500 hover:text-gray-700"><i class="fas fa-truck-loading mr-1"></i>Jual ke PDU</button>
-                            </div>
-                            <div class="p-6">
-                                <!-- FORM SETOR -->
-                                <form id="form-setor" class="space-y-4">
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nasabah Penyetor</label><select id="trx-nasabah" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50" required></select></div>
-                                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Jenis Sampah</label><select id="trx-jenis" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50" required onchange="updateTrxPreview()"></select></div>
-                                    </div>
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Berat (Kg)</label><input type="number" id="trx-berat" step="0.01" min="0.1" class="w-full border rounded-lg p-2.5 text-sm" required oninput="updateTrxPreview()" placeholder="0.00"></div>
-                                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Status Bayar</label><select id="trx-status" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50"><option value="ditabung">Ditabung (Masuk Saldo)</option><option value="dibayar">Langsung Dibayar Cash</option></select></div>
-                                    </div>
-                                    <div class="bg-emerald-50 p-4 rounded-lg flex justify-between items-center border border-emerald-100 mt-4"><span class="text-sm font-medium text-emerald-800">Estimasi Nilai Setoran:</span><span class="text-xl font-bold text-emerald-700" id="trx-preview-total">Rp 0</span></div>
-                                    <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition shadow-md"><i class="fas fa-save mr-2"></i>Simpan Transaksi Setor</button>
-                                </form>
-
-                                <!-- FORM TARIK DANA / PENGAMBILAN -->
-                                <form id="form-tarik" class="space-y-4 hidden-section">
-                                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nasabah Penarik</label><select id="tarik-nasabah" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50" required onchange="loadSaldoNasabah()"></select></div>
-                                    <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 flex justify-between items-center"><span class="text-sm font-medium text-blue-800">Saldo Tersedia:</span><span class="text-xl font-bold text-blue-700" id="tarik-saldo-display">Rp 0</span></div>
-                                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nominal Penarikan (Rp)</label><input type="number" id="tarik-nominal" min="1000" class="w-full border rounded-lg p-2.5 text-sm" required placeholder="Masukkan nominal penarikan..."></div>
-                                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Keterangan / Catatan</label><input type="text" id="tarik-ket" class="w-full border rounded-lg p-2.5 text-sm" placeholder="Misal: Penarikan Saldo Bulanan"></div>
-                                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition shadow-md"><i class="fas fa-money-bill-wave mr-2"></i>Proses Penarikan Dana</button>
-                                </form>
-
-                                <!-- FORM JUAL KE PDU / OFFTAKER -->
-                                <form id="form-pdu" class="space-y-4 hidden-section">
-                                    <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 text-xs text-amber-800"><i class="fas fa-info-circle mr-1"></i>Catatan: Fitur ini mencatat penjualan kolektif dari Bank Sampah ke PDU / Offtaker Pusat.</div>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Jenis Sampah</label><select id="pdu-jenis" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50" required onchange="updatePduPreview()"></select></div>
-                                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Total Berat Terjual (Kg)</label><input type="number" id="pdu-berat" step="0.01" min="0.1" class="w-full border rounded-lg p-2.5 text-sm" required oninput="updatePduPreview()" placeholder="0.00"></div>
-                                    </div>
-                                    <div class="bg-amber-50 p-4 rounded-lg flex justify-between items-center border border-amber-200"><span class="text-sm font-medium text-amber-900">Total Pendapatan PDU:</span><span class="text-xl font-bold text-amber-700" id="pdu-preview-total">Rp 0</span></div>
-                                    <button type="submit" class="w-full bg-amber-600 text-white font-bold py-3 rounded-lg hover:bg-amber-700 transition shadow-md"><i class="fas fa-truck-moving mr-2"></i>Catat Penjualan PDU</button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- KOLOM KANAN: APPROVAL & RIWAYAT -->
-                    <div class="space-y-6">
-                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                            <h3 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b flex items-center justify-between">
-                                <span><i class="fas fa-user-check text-yellow-500 mr-2"></i>Approval Anggota</span>
-                                <span class="text-xs bg-yellow-100 text-yellow-800 font-bold px-2 py-0.5 rounded-full" id="count-pending-pengurus">0</span>
-                            </h3>
-                            <div class="overflow-y-auto max-h-52"><table class="min-w-full text-sm"><thead class="bg-gray-50 sticky top-0"><tr><th class="py-2 px-3 text-left font-bold text-gray-500 uppercase text-xs">Nama</th><th class="py-2 px-3 text-right font-bold text-gray-500 uppercase text-xs">Aksi</th></tr></thead><tbody id="table-pending-pengurus" class="divide-y divide-gray-100"></tbody></table></div>
-                        </div>
-                        
-                        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                            <h3 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b flex items-center gap-2"><i class="fas fa-history text-gray-400"></i> Riwayat Terkini</h3>
-                            <div class="space-y-3 max-h-80 overflow-y-auto pr-1" id="list-riwayat-transaksi"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- NASABAH DASHBOARD -->
-            <div id="nasabah-dashboard" class="hidden-section space-y-6">
-                <div class="bg-gradient-to-br from-emerald-600 to-teal-800 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
-                    <div class="relative z-10">
-                        <p class="text-emerald-100 text-xs font-bold uppercase">Selamat Datang,</p>
-                        <h2 class="text-2xl font-bold mb-6" id="nasabah-nama">Nama Nasabah</h2>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/10">
-                                <p class="text-xs text-emerald-100 uppercase font-bold">Saldo Ditabung</p>
-                                <h3 class="text-3xl font-bold" id="nasabah-saldo-tabung">Rp 0</h3>
-                            </div>
-                            <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/10">
-                                <p class="text-xs text-emerald-100 uppercase font-bold">Total Setoran Sampah</p>
-                                <h3 class="text-3xl font-bold" id="nasabah-total-setor">0 Kg</h3>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg shadow-sm flex items-start gap-3">
-                    <i class="fas fa-bell text-yellow-600 text-xl mt-0.5"></i>
+            <!-- Form Quick Action: Penjualan ke PDU / Offtaker -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h3 class="text-md font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-building-circle-arrow-right text-purple-600"></i> Input Penjualan ke PDU / Offtaker
+                </h3>
+                <form class="space-y-4">
                     <div>
-                        <h3 class="text-sm font-bold text-yellow-800">Update Harga Offtaker Terbaru</h3>
-                        <p class="text-sm text-yellow-700 mt-1" id="nasabah-harga-update">Memuat daftar harga...</p>
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">PDU / Offtaker Tujuan</label>
+                        <select class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option>PDU Pusat Tangerang</option>
+                            <option>PT Daur Ulang Mandiri</option>
+                        </select>
                     </div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2"><i class="fas fa-list text-emerald-600"></i> Riwayat Setoran Sampah</h3>
-                    <div class="space-y-3" id="nasabah-riwayat-list"></div>
-                </div>
-            </div>
-        </main>
-
-        <footer class="bg-white border-t border-gray-200 py-6 mt-auto">
-            <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <img src="logo.png" class="h-8 w-8 object-contain">
-                    <div><p class="text-sm font-bold text-emerald-800">RAJIN</p><p class="text-[10px] text-gray-500">Rezeki Amanah Jaya Indonesia</p></div>
-                </div>
-                <p class="text-xs text-gray-400">&copy; 2026 CV Rezeki Amanah Jaya Group[cite: 1].</p>
-            </div>
-        </footer>
-    </div>
-
-    <!-- ================= FLOATING CHAT HELPER ================= -->
-    <div class="fixed bottom-6 right-6 z-50">
-        <button onclick="toggleChatWindow()" class="w-14 h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl transition hover:scale-105">
-            <i class="fas fa-robot"></i>
-        </button>
-
-        <div id="chat-window" class="hidden-section absolute bottom-16 right-0 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden chat-enter flex flex-col h-96">
-            <div class="bg-gradient-to-r from-emerald-700 to-teal-800 p-4 text-white flex justify-between items-center">
-                <div class="flex items-center gap-2"><div class="w-2.5 h-2.5 bg-green-400 rounded-full animate-ping"></div><span class="font-bold text-sm">Asisten RAJIN - Online</span></div>
-                <button onclick="toggleChatWindow()" class="text-emerald-200 hover:text-white"><i class="fas fa-times"></i></button>
-            </div>
-            
-            <div id="chat-messages" class="flex-grow p-4 overflow-y-auto space-y-3 text-xs">
-                <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-100 text-emerald-900">Halo! 👋 Saya Asisten RAJIN. Ada yang bisa saya bantu terkait Bank Sampah hari ini?</div>
-            </div>
-
-            <div class="p-3 bg-gray-50 border-t border-gray-100 flex flex-wrap gap-1.5">
-                <button onclick="handleChatAction('cek_harga')" class="bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 text-[11px] px-2.5 py-1 rounded-full font-medium shadow-sm transition">🏷️ Cek Harga Hari Ini</button>
-                <button onclick="handleChatAction('cara_setor')" class="bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 text-[11px] px-2.5 py-1 rounded-full font-medium shadow-sm transition">♻️ Cara Setor Sampah</button>
-                <button onclick="handleChatAction('hubungi_admin')" class="bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-50 text-[11px] px-2.5 py-1 rounded-full font-medium shadow-sm transition">📞 Hubungi Admin</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ================= MODALS ================= -->
-    <div id="modal-confirm-overwrite" class="hidden-section fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 chat-enter border-t-4 border-yellow-500 text-center">
-            <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-600 text-2xl"><i class="fas fa-exclamation-triangle"></i></div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2">Akun Sudah Terdaftar?</h3>
-            <p class="text-sm text-gray-600 mb-6">Email ini sudah memiliki riwayat data. Apakah Anda yakin ingin menimpa data lama dan mengajukan persetujuan ulang?</p>
-            <div class="flex gap-3">
-                <button onclick="closeOverwriteModal()" class="flex-1 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition">Batal</button>
-                <button id="btn-confirm-overwrite" class="flex-1 py-2.5 bg-yellow-600 text-white rounded-lg font-bold hover:bg-yellow-700 transition shadow-md">Ya, Timpa Data</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-add-bs" class="hidden-section fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 chat-enter border-t-4 border-emerald-600">
-            <h3 class="text-lg font-bold mb-4">Tambah Bank Sampah</h3>
-            <form id="form-add-bs" class="space-y-4">
-                <input type="text" id="new-bs-nama" required placeholder="Nama Bank Sampah" class="w-full border rounded-lg p-2.5 text-sm">
-                <input type="text" id="new-bs-alamat" placeholder="Alamat" class="w-full border rounded-lg p-2.5 text-sm">
-                <input type="text" id="new-bs-hp" placeholder="No HP" class="w-full border rounded-lg p-2.5 text-sm">
-                <div class="flex justify-end space-x-3 pt-4"><button type="button" onclick="toggleModal('modal-add-bs')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">Batal</button><button type="submit" class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold text-sm">Simpan</button></div>
-            </form>
-        </div>
-    </div>
-
-    <div id="modal-approve-user" class="hidden-section fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 chat-enter border-t-4 border-blue-600">
-            <h3 class="text-lg font-bold mb-4">Approve User Baru</h3>
-            <input type="hidden" id="approve-user-id">
-            <div class="space-y-4">
-                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Role Utama</label><select id="approve-role" class="w-full border rounded-lg p-2.5 text-sm"><option value="pengurus">Pengurus Bank Sampah</option><option value="nasabah">Nasabah</option></select></div>
-                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Pilih Bank Sampah</label><select id="approve-bank" class="w-full border rounded-lg p-2.5 text-sm"></select></div>
-                <div class="flex justify-end space-x-3 pt-4"><button type="button" onclick="toggleModal('modal-approve-user')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">Batal</button><button onclick="submitApproveUser()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold text-sm">Approve Sekarang</button></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ================= JAVASCRIPT LOGIC ================= -->
-    <script>
-        const SUPABASE_URL = 'https://woqifznkmbsjxelzhmjk.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'sb_publishable_3iBnO0BYibh8Y8WJwXI0hg_X3iho_pj'; 
-        
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        let currentUser = null, currentProfile = null, jenisSampahList = [], hargaOfftakerMap = {}; 
-
-        async function initApp() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) await handleLoginSuccess(session.user);
-            else showSection('login-page');
-        }
-
-        function switchAuthTab(tab) {
-            document.getElementById('login-form').classList.toggle('hidden-section', tab !== 'login');
-            document.getElementById('register-form').classList.toggle('hidden-section', tab !== 'register');
-            document.getElementById('tab-login').className = tab === 'login' ? 'flex-1 py-2 text-sm font-bold text-emerald-600 border-b-2 border-emerald-600 transition' : 'flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition';
-            document.getElementById('tab-register').className = tab === 'register' ? 'flex-1 py-2 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition' : 'flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition';
-        }
-
-        // --- AUTH & LOGIN ---
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const btn = e.target.querySelector('button');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Memproses...';
-            btn.disabled = true;
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email: document.getElementById('login-email').value, password: document.getElementById('login-password').value });
-            btn.innerHTML = originalText; btn.disabled = false;
-            if (error) alert('Login Gagal: ' + error.message);
-            else await handleLoginSuccess(data.user);
-        });
-
-        document.getElementById('register-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('reg-email').value;
-            const password = document.getElementById('reg-password').value;
-            const nama = document.getElementById('reg-nama').value;
-            const hp = document.getElementById('reg-hp').value;
-            const alamat = document.getElementById('reg-alamat').value;
-
-            const btn = e.target.querySelector('button');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Mendaftar...';
-            btn.disabled = true;
-
-            try {
-                const { data: authData, error: authError } = await supabaseClient.auth.signUp({ email, password, options: { data: { nama_lengkap: nama, no_hp: hp, alamat: alamat } } });
-                if (authError) {
-                    if (authError.message.toLowerCase().includes('already registered') || authError.message.toLowerCase().includes('duplicate')) {
-                        document.getElementById('modal-confirm-overwrite').classList.remove('hidden-section');
-                        document.getElementById('modal-confirm-overwrite').classList.add('active-section');
-                        document.getElementById('btn-confirm-overwrite').onclick = async () => await handleOverwriteUser(email, password, nama, hp, alamat);
-                    } else { alert('Gagal mendaftar: ' + authError.message); }
-                } else {
-                    alert('Pendaftaran berhasil! Akun Anda berstatus Pending.');
-                    switchAuthTab('login'); e.target.reset();
-                }
-            } catch (err) { alert('Terjadi kesalahan: ' + err.message); }
-            finally { btn.innerHTML = originalText; btn.disabled = false; }
-        });
-
-        async function handleOverwriteUser(email, password, nama, hp, alamat) {
-            try {
-                const { data: loginData, error: loginError } = await supabaseClient.auth.signInWithPassword({ email, password });
-                if (loginError) throw loginError;
-                const { error: profileError } = await supabaseClient.from('profiles').upsert({ id: loginData.user.id, role: 'pending', status: 'active', nama_lengkap: nama, no_hp: hp, alamat: alamat, bank_sampah_id: null }, { onConflict: 'id' });
-                if (profileError) throw profileError;
-                closeOverwriteModal();
-                alert('Data berhasil diperbarui! Akun kembali ke status Pending.');
-                switchAuthTab('login'); document.getElementById('register-form').reset();
-            } catch (err) { alert('Gagal menimpa data: ' + err.message); }
-        }
-
-        function closeOverwriteModal() {
-            document.getElementById('modal-confirm-overwrite').classList.add('hidden-section');
-            document.getElementById('modal-confirm-overwrite').classList.remove('active-section');
-        }
-
-        async function handleLoginSuccess(user) {
-            currentUser = user;
-            const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
-            if (error || !profile) { alert('Error mengambil data profil.'); await doLogout(); return; }
-            if (profile.role === 'pending') { showSection('pending-page'); return; }
-            
-            currentProfile = profile;
-            document.getElementById('user-name').textContent = profile.nama_lengkap;
-            document.getElementById('user-role').textContent = profile.role;
-            await loadMasterData();
-            showSection('app-container');
-            
-            if (profile.role === 'admin') await loadAdminDashboard();
-            else if (profile.role === 'pengurus') await loadPengurusDashboard();
-            else if (profile.role === 'nasabah') await loadNasabahDashboard();
-        }
-
-        async function doLogout() { await supabaseClient.auth.signOut(); window.location.reload(); }
-        function showSection(id) { ['login-page', 'pending-page', 'app-container'].forEach(s => { const el = document.getElementById(s); if(el) { el.classList.add('hidden-section'); el.classList.remove('active-section'); } }); const t = document.getElementById(id); if(t) { t.classList.remove('hidden-section'); t.classList.add('active-section'); } }
-
-        async function loadMasterData() {
-            const { data: js } = await supabaseClient.from('jenis_sampah').select('*').order('nama_sampah'); jenisSampahList = js || [];
-            const { data: ho } = await supabaseClient.from('harga_offtaker').select('jenis_sampah_id, harga_per_kg').is('bank_sampah_id', null); hargaOfftakerMap = {}; (ho || []).forEach(h => hargaOfftakerMap[h.jenis_sampah_id] = h.harga_per_kg);
-        }
-        function formatRupiah(a) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(a); }
-
-        // --- ADMIN FUNCTIONS ---
-        async function loadAdminDashboard() {
-            document.getElementById('admin-dashboard').classList.remove('hidden-section');
-            const { count } = await supabaseClient.from('bank_sampah').select('*', { count: 'exact', head: true }); document.getElementById('stat-total-bs').textContent = count || 0;
-            loadTableBankSampah(); loadTableHargaOfftaker(); loadPendingUsersAdmin();
-        }
-        function switchAdminTab(t) { document.querySelectorAll('.admin-tab').forEach(b => { b.className = 'admin-tab border-transparent text-gray-500 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm'; }); event.currentTarget.className = 'admin-tab active-tab border-emerald-500 text-emerald-600 whitespace-nowrap py-3 px-1 border-b-2 font-bold text-sm'; document.querySelectorAll('.admin-content').forEach(c => c.classList.add('hidden-section')); document.getElementById(`tab-${t}`).classList.remove('hidden-section'); }
-        
-        async function loadTableBankSampah() { const { data } = await supabaseClient.from('bank_sampah').select('*').order('created_at', { ascending: false }); const tb = document.getElementById('table-bs-body'); tb.innerHTML = ''; (data||[]).forEach(r => tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${r.nama_bank}</td><td class="px-6 py-4 text-gray-600">${r.alamat||'-'}</td><td class="px-6 py-4 text-gray-600">${r.no_hp||'-'}</td></tr>`); }
-        async function loadTableHargaOfftaker() { const { data } = await supabaseClient.from('harga_offtaker').select('*, jenis_sampah(nama_sampah)').is('bank_sampah_id', null).order('jenis_sampah(nama_sampah)'); const tb = document.getElementById('table-offtaker-body'); tb.innerHTML = ''; (data||[]).forEach(h => tb.innerHTML += `<tr><td class="px-6 py-3 font-medium">${h.jenis_sampah?.nama_sampah}</td><td class="px-6 py-3 text-emerald-700 font-bold">${formatRupiah(h.harga_per_kg)}</td></tr>`); }
-        
-        async function loadPendingUsersAdmin() {
-            const { data } = await supabaseClient.from('profiles').select('*').eq('role', 'pending');
-            const tb = document.getElementById('table-pending-admin'); tb.innerHTML = '';
-            document.getElementById('count-pending-admin').textContent = (data || []).length;
-            (data||[]).forEach(u => { tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${u.nama_lengkap}</td><td class="px-6 py-4 text-gray-600">${u.email || '-'}</td><td class="px-6 py-4 text-gray-600">${u.no_hp||'-'}</td><td class="px-6 py-4"><button onclick="openApproveModal('${u.id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 font-medium">Approve</button></td></tr>`; });
-        }
-
-        async function openApproveModal(userId) {
-            document.getElementById('approve-user-id').value = userId;
-            const { data: bs } = await supabaseClient.from('bank_sampah').select('*').order('nama_bank');
-            const sel = document.getElementById('approve-bank'); sel.innerHTML = '';
-            (bs||[]).forEach(b => sel.innerHTML += `<option value="${b.id}">${b.nama_bank}</option>`);
-            toggleModal('modal-approve-user');
-        }
-
-        async function submitApproveUser() {
-            const userId = document.getElementById('approve-user-id').value;
-            const role = document.getElementById('approve-role').value;
-            const bankId = document.getElementById('approve-bank').value;
-            await supabaseClient.from('profiles').update({ role: role, bank_sampah_id: bankId }).eq('id', userId);
-            if (role === 'nasabah') await supabaseClient.from('nasabah').upsert({ profile_id: userId, bank_sampah_id: bankId }, { onConflict: 'profile_id' });
-            alert('User berhasil di-approve!'); toggleModal('modal-approve-user'); loadPendingUsersAdmin();
-        }
-
-        // --- PENGURUS FUNCTIONS ---
-        async function loadPengurusDashboard() {
-            document.getElementById('pengurus-dashboard').classList.remove('hidden-section');
-            const { data: bs } = await supabaseClient.from('bank_sampah').select('*').eq('id', currentProfile.bank_sampah_id).single();
-            document.getElementById('pengurus-nama-bs').textContent = bs?.nama_bank || 'Bank Sampah Saya';
-            
-            // Pending Users untuk Pengurus
-            const { data: pending } = await supabaseClient.from('profiles').select('*').eq('role', 'pending').or(`bank_sampah_id.eq.${currentProfile.bank_sampah_id},bank_sampah_id.is.null`);
-            const tb = document.getElementById('table-pending-pengurus'); tb.innerHTML = '';
-            document.getElementById('count-pending-pengurus').textContent = (pending || []).length;
-            (pending||[]).forEach(u => { tb.innerHTML += `<tr><td class="py-2.5 px-3 font-medium text-xs">${u.nama_lengkap}</td><td class="py-2.5 px-3 text-right"><button onclick="approveUserByPengurus('${u.id}')" class="bg-emerald-600 text-white px-2.5 py-1 rounded text-[11px] font-bold hover:bg-emerald-700">Accept</button></td></tr>`; });
-
-            // Nasabah Dropdown & Total Tabungan
-            const { data: nasabah } = await supabaseClient.from('nasabah').select('*, profiles(nama_lengkap)').eq('bank_sampah_id', currentProfile.bank_sampah_id);
-            let totalTabungan = 0;
-            const selN = document.getElementById('trx-nasabah'); selN.innerHTML = '<option value="">-- Pilih Nasabah --</option>';
-            (nasabah||[]).forEach(n => {
-                totalTabungan += (n.saldo_tabungan || 0);
-                selN.innerHTML += `<option value="${n.id}">${n.profiles?.nama_lengkap}</option>`;
-            });
-            document.getElementById('pengurus-total-tabungan').textContent = formatRupiah(totalTabungan);
-
-            // Select Jenis Sampah
-            const selJ = document.getElementById('trx-jenis'); selJ.innerHTML = '<option value="">-- Pilih Sampah --</option>';
-            const selPDU = document.getElementById('pdu-jenis'); selPDU.innerHTML = '<option value="">-- Pilih Sampah --</option>';
-            
-            jenisSampahList.forEach(js => {
-                const hd = hargaOfftakerMap[js.id] || 0;
-                selJ.innerHTML += `<option value="${js.id}" data-harga="${hd*0.7}">${js.nama_sampah}</option>`;
-                selPDU.innerHTML += `<option value="${js.id}" data-harga="${hd}">${js.nama_sampah}</option>`;
-            });
-
-            await loadDropdownNasabahTarik();
-            await loadRecentTransactions();
-        }
-
-        function switchTrxTab(tab) {
-            ['setor', 'tarik', 'pdu'].forEach(t => {
-                document.getElementById(`tab-${t}`).className = "flex-1 py-3 font-medium text-gray-500 hover:text-gray-700";
-                document.getElementById(`form-${t}`).classList.add('hidden-section');
-            });
-            
-            if (tab === 'setor') {
-                document.getElementById('tab-setor').className = "flex-1 py-3 font-bold text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50/50";
-                document.getElementById('form-setor').classList.remove('hidden-section');
-            } else if (tab === 'tarik') {
-                document.getElementById('tab-tarik').className = "flex-1 py-3 font-bold text-blue-600 border-b-2 border-blue-600 bg-blue-50/50";
-                document.getElementById('form-tarik').classList.remove('hidden-section');
-            } else if (tab === 'pdu') {
-                document.getElementById('tab-pdu').className = "flex-1 py-3 font-bold text-amber-600 border-b-2 border-amber-600 bg-amber-50/50";
-                document.getElementById('form-pdu').classList.remove('hidden-section');
-            }
-        }
-
-        async function loadDropdownNasabahTarik() {
-            const select = document.getElementById('tarik-nasabah'); select.innerHTML = '<option value="">-- Pilih Nasabah --</option>';
-            const { data } = await supabaseClient.from('nasabah').select('*, profiles(nama_lengkap)').eq('bank_sampah_id', currentProfile.bank_sampah_id);
-            (data || []).forEach(n => { select.innerHTML += `<option value="${n.id}" data-saldo="${n.saldo_tabungan || 0}">${n.profiles?.nama_lengkap}</option>`; });
-        }
-
-        function loadSaldoNasabah() {
-            const select = document.getElementById('tarik-nasabah');
-            const selectedOpt = select.options[select.selectedIndex];
-            const saldo = selectedOpt ? parseFloat(selectedOpt.dataset.saldo) || 0 : 0;
-            document.getElementById('tarik-saldo-display').textContent = formatRupiah(saldo);
-        }
-
-        document.getElementById('form-tarik').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const nasabahId = document.getElementById('tarik-nasabah').value;
-            const nominal = parseFloat(document.getElementById('tarik-nominal').value);
-            if (!nasabahId || !nominal || nominal <= 0) { alert('Mohon lengkapi data penarikan!'); return; }
-            
-            const { data: nData } = await supabaseClient.from('nasabah').select('saldo_tabungan').eq('id', nasabahId).single();
-            if (!nData || nData.saldo_tabungan < nominal) { alert('Saldo nasabah tidak mencukupi!'); return; }
-            
-            // Kurangi Saldo & Simpan Transaksi Tarik
-            await supabaseClient.from('nasabah').update({ saldo_tabungan: nData.saldo_tabungan - nominal }).eq('id', nasabahId);
-            await supabaseClient.from('transaksi').insert({ bank_sampah_id: currentProfile.bank_sampah_id, nasabah_id: nasabahId, berat_kg: 0, total_harga: nominal, kategori_transaksi: 'tarik', status_bayar: 'dibayar' });
-            
-            alert(`Penarikan dana ${formatRupiah(nominal)} berhasil diproses!`);
-            e.target.reset(); document.getElementById('tarik-saldo-display').textContent = 'Rp 0';
-            loadPengurusDashboard();
-        });
-
-        document.getElementById('form-pdu').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const jenisId = document.getElementById('pdu-jenis').value;
-            const berat = parseFloat(document.getElementById('pdu-berat').value);
-            const select = document.getElementById('pdu-jenis');
-            const harga = parseFloat(select.options[select.selectedIndex].dataset.harga || 0);
-            const total = berat * harga;
-
-            const { error } = await supabaseClient.from('transaksi').insert({ bank_sampah_id: currentProfile.bank_sampah_id, jenis_sampah_id: jenisId, berat_kg: berat, harga_saat_transaksi: harga, total_harga: total, kategori_transaksi: 'jual_pdu', status_bayar: 'dibayar' });
-            if(error) alert('Gagal mencatat penjualan PDU: ' + error.message);
-            else { alert('Penjualan Sampah ke PDU berhasil dicatat!'); e.target.reset(); document.getElementById('pdu-preview-total').textContent = 'Rp 0'; loadPengurusDashboard(); }
-        });
-
-        async function approveUserByPengurus(userId) {
-            await supabaseClient.from('profiles').update({ role: 'nasabah', bank_sampah_id: currentProfile.bank_sampah_id }).eq('id', userId);
-            await supabaseClient.from('nasabah').upsert({ profile_id: userId, bank_sampah_id: currentProfile.bank_sampah_id }, { onConflict: 'profile_id' });
-            alert('Nasabah berhasil diapprove!'); loadPengurusDashboard();
-        }
-
-        function updateTrxPreview() { const s=document.getElementById('trx-jenis'); const b=parseFloat(document.getElementById('trx-berat').value)||0; const o=s.options[s.selectedIndex]; if(o&&o.value){document.getElementById('trx-preview-total').textContent=formatRupiah((parseFloat(o.dataset.harga)||0)*b);}else{document.getElementById('trx-preview-total').textContent='Rp 0';} }
-        function updatePduPreview() { const s=document.getElementById('pdu-jenis'); const b=parseFloat(document.getElementById('pdu-berat').value)||0; const o=s.options[s.selectedIndex]; if(o&&o.value){document.getElementById('pdu-preview-total').textContent=formatRupiah((parseFloat(o.dataset.harga)||0)*b);}else{document.getElementById('pdu-preview-total').textContent='Rp 0';} }
-
-        document.getElementById('form-setor').addEventListener('submit', async(e)=>{
-            e.preventDefault(); 
-            const ni=document.getElementById('trx-nasabah').value; const ji=document.getElementById('trx-jenis').value; const b=parseFloat(document.getElementById('trx-berat').value); 
-            if(!ni||!ji||!b){alert('Lengkapi data!');return;} 
-            const s=document.getElementById('trx-jenis'); const h=parseFloat(s.options[s.selectedIndex].dataset.harga); const t=h*b; 
-            const status = document.getElementById('trx-status').value;
-            
-            const {error}=await supabaseClient.from('transaksi').insert({bank_sampah_id:currentProfile.bank_sampah_id,nasabah_id:ni,jenis_sampah_id:ji,berat_kg:b,harga_saat_transaksi:h,total_harga:t,kategori_transaksi:'beli',status_bayar:status}); 
-            
-            if(status === 'ditabung' && !error) {
-                const { data: nData } = await supabaseClient.from('nasabah').select('saldo_tabungan').eq('id', ni).single();
-                await supabaseClient.from('nasabah').update({ saldo_tabungan: (nData?.saldo_tabungan || 0) + t }).eq('id', ni);
-            }
-
-            if(error) alert('Gagal: '+error.message); 
-            else{ alert('Transaksi setor berhasil!'); e.target.reset(); document.getElementById('trx-preview-total').textContent='Rp 0'; loadPengurusDashboard(); }
-        });
-
-        async function loadRecentTransactions() {
-            const container = document.getElementById('list-riwayat-transaksi'); container.innerHTML = '<div class="text-center text-xs text-gray-400 py-4">Memuat...</div>';
-            const { data } = await supabaseClient.from('transaksi').select('*, jenis_sampah(nama_sampah), nasabah(profiles(nama_lengkap))').eq('bank_sampah_id', currentProfile.bank_sampah_id).order('tanggal_transaksi', { ascending: false }).limit(10);
-            
-            // Hitung Total Pengambilan
-            let totalTarik = 0;
-            (data || []).forEach(t => { if(t.kategori_transaksi === 'tarik') totalTarik += t.total_harga; });
-            document.getElementById('pengurus-total-penarikan').textContent = formatRupiah(totalTarik);
-
-            container.innerHTML = '';
-            if (!data || data.length === 0) { container.innerHTML = '<div class="text-center text-xs text-gray-400 py-4">Belum ada transaksi.</div>'; return; }
-            data.forEach(t => {
-                const isTarik = t.kategori_transaksi === 'tarik';
-                const isPdu = t.kategori_transaksi === 'jual_pdu';
-                container.innerHTML += `<div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100 text-sm">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 ${isTarik ? 'bg-blue-100 text-blue-600' : isPdu ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600'} rounded-full flex items-center justify-center shrink-0">
-                            <i class="fas ${isTarik ? 'fa-hand-holding-usd' : isPdu ? 'fa-truck' : 'fa-recycle'} text-xs"></i>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Berat Total (Kg)</label>
+                            <input type="number" placeholder="Contoh: 100" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                         </div>
                         <div>
-                            <p class="font-bold text-gray-800">${isPdu ? 'Penjualan ke PDU' : (t.nasabah?.profiles?.nama_lengkap || 'Nasabah')}</p>
-                            <p class="text-[10px] text-gray-500">${new Date(t.tanggal_transaksi).toLocaleDateString('id-ID')}</p>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Total Harga (Rp)</label>
+                            <input type="number" placeholder="Contoh: 500000" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
                         </div>
                     </div>
-                    <div class="text-right">
-                        <p class="font-bold ${isTarik ? 'text-blue-600' : isPdu ? 'text-amber-600' : 'text-emerald-600'}">${formatRupiah(t.total_harga)}</p>
-                        <p class="text-[10px] text-gray-400">${isTarik ? 'Tarik Saldo' : t.jenis_sampah?.nama_sampah}</p>
-                    </div>
-                </div>`;
-            });
-        }
+                    <button type="button" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded-lg text-sm transition">
+                        Simpan Penjualan Offtaker
+                    </button>
+                </form>
+            </div>
 
-        // --- NASABAH FUNCTIONS ---
-        async function loadNasabahDashboard() {
-            document.getElementById('nasabah-dashboard').classList.remove('hidden-section');
-            const { data: nData } = await supabaseClient.from('nasabah').select('*').eq('profile_id', currentProfile.id).single();
-            if(nData){
-                document.getElementById('nasabah-nama').textContent=currentProfile.nama_lengkap;
-                document.getElementById('nasabah-saldo-tabung').textContent=formatRupiah(nData.saldo_tabungan||0);
-            }
+        </div>
 
-            // Notifikasi Harga Terbaru
-            let topHargaText = [];
-            jenisSampahList.slice(0, 3).forEach(j => {
-                if(hargaOfftakerMap[j.id]) topHargaText.push(`${j.nama_sampah}: ${formatRupiah(hargaOfftakerMap[j.id])}/kg`);
-            });
-            document.getElementById('nasabah-harga-update').textContent = topHargaText.join(' | ') || 'Harga stabil hari ini.';
+    </main>
 
-            const { data: trx } = await supabaseClient.from('transaksi').select('*, jenis_sampah(nama_sampah, satuan)').eq('nasabah_id', nData?.id).order('tanggal_transaksi',{ascending:false});
-            const lc=document.getElementById('nasabah-riwayat-list'); lc.innerHTML=''; let tb=0;
-            
-            (trx||[]).forEach(t=>{
-                tb+=t.berat_kg; 
-                lc.innerHTML+=`<div class="flex justify-between items-center p-4 bg-white rounded-xl border border-gray-100 shadow-sm"><div><p class="font-bold text-gray-900">${t.jenis_sampah?.nama_sampah || 'Penarikan Dana'}</p><p class="text-xs text-gray-500">${new Date(t.tanggal_transaksi).toLocaleDateString('id-ID')} ${t.berat_kg > 0 ? `• ${t.berat_kg} Kg` : ''}</p></div><div class="text-right"><p class="font-bold ${t.kategori_transaksi==='tarik' ? 'text-blue-600':'text-emerald-700'}">${formatRupiah(t.total_harga)}</p><span class="text-[10px] px-2 py-0.5 rounded-full ${t.kategori_transaksi==='tarik'?'bg-blue-100 text-blue-700':t.status_bayar==='dibayar'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}">${t.kategori_transaksi==='tarik'?'Tarik Saldo':t.status_bayar==='dibayar'?'Dibayar':'Ditabung'}</span></div></div>`;
-            });
-            document.getElementById('nasabah-total-setor').textContent=tb.toFixed(1)+' Kg';
-        }
+    <!-- Footer -->
+    <footer class="max-w-7xl mx-auto px-6 py-6 border-t border-gray-200 text-xs text-gray-500 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+            <span class="font-bold text-gray-700">RAJIN</span> - Rezeki Amanah Jaya Indonesia
+        </div>
+        <div>
+            © 2026 CV Rezeki Amanah Jaya Group
+        </div>
+    </footer>
 
-        // --- FLOATING CHAT HELPER ---
-        function toggleChatWindow() { document.getElementById('chat-window').classList.toggle('hidden-section'); }
-        
-        function handleChatAction(action) {
-            const messages = document.getElementById('chat-messages');
-            if (action === 'cek_harga') {
-                let priceList = "<b>📋 5 Harga Sampah Teratas Hari Ini:</b><br><ul class='list-disc pl-4 mt-1 space-y-1'>";
-                jenisSampahList.slice(0, 5).forEach(j => {
-                    const price = hargaOfftakerMap[j.id] ? formatRupiah(hargaOfftakerMap[j.id]) : 'Sesuai Pasaran';
-                    priceList += `<li>${j.nama_sampah}: <b>${price}/kg</b></li>`;
-                });
-                priceList += "</ul>";
-                messages.innerHTML += `<div class="bg-emerald-100 p-2.5 rounded-xl text-emerald-900">${priceList}</div>`;
-            } else if (action === 'cara_setor') {
-                messages.innerHTML += `<div class="bg-gray-100 p-2.5 rounded-xl text-gray-800"><b>♻️ Cara Setor Sampah:</b><br>1. Pilah sampah dari rumah.<br>2. Bawa ke Bank Sampah terdekat.<br>3. Pengurus akan menimbang dan mencatat saldo Anda.</div>`;
-            } else if (action === 'hubungi_admin') {
-                messages.innerHTML += `<div class="bg-gray-100 p-2.5 rounded-xl text-gray-800"><b>📞 Kontak Admin Pusat RAJIN:</b><br>WhatsApp: 0812-3456-7890<br>Email: support@rajin.id</div>`;
-            }
-            messages.scrollTop = messages.scrollHeight;
-        }
+    <!-- Floating Bot / Help Button -->
+    <button class="fixed bottom-6 right-6 bg-emerald-600 text-white p-4 rounded-full shadow-lg hover:bg-emerald-700 transition flex items-center justify-center">
+        <i class="fa-solid fa-robot text-xl"></i>
+    </button>
 
-        // --- EXPORT & IMPORT CSV ---
-        function exportOfftakerCSV(){
-            let csv = '\uFEFFNama Sampah,Harga Per Kg\n';
-            jenisSampahList.forEach(j=>{
-                const harga = hargaOfftakerMap[j.id] || 0;
-                csv += `"${j.nama_sampah}",${harga}\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = `Master_Harga_Offtaker_RAJIN.csv`;
-            document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        }
-
-        async function handleImportOfftaker(input){
-            const f=input.files[0];if(!f)return;const t=await f.text();const l=t.split('\n').slice(1);let c=0;
-            for(let ln of l){const[n,h]=ln.split(',');if(n&&h){const hv=parseFloat(h.replace(/[^0-9.-]+/g,""));const j=jenisSampahList.find(x=>x.nama_sampah.toLowerCase().includes(n.trim().toLowerCase()));if(j&&!isNaN(hv)){await supabaseClient.from('harga_offtaker').upsert({jenis_sampah_id:j.id,bank_sampah_id:null,harga_per_kg:hv},{onConflict:'jenis_sampah_id, bank_sampah_id'});c++;}}}
-            alert(`Import ${c} data berhasil!`);loadTableHargaOfftaker();input.value='';
-        }
-
-        function toggleModal(id){document.getElementById(id).classList.toggle('hidden-section');}
-        window.addEventListener('DOMContentLoaded', initApp);
-    </script>
 </body>
 </html>
