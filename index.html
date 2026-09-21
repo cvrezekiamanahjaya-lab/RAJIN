@@ -5,15 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RAJIN - Rezeki Amanah Jaya Indonesia</title>
     <link rel="icon" href="logo.png" type="image/png">
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: #f1f1f1; } ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 4px; }
-        .hidden-section { display: none !important; } .active-section { display: block; animation: fadeIn 0.5s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .chat-enter { animation: slideUp 0.3s ease-out forwards; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        /* Custom Scrollbar & Animations */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 4px; }
+        .hidden-section { display: none !important; }
+        .active-section { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
@@ -21,48 +27,41 @@
     <!-- LOGIN PAGE -->
     <div id="login-page" class="flex-grow flex items-center justify-center p-4 bg-gradient-to-br from-emerald-800 to-teal-900 relative overflow-hidden">
         <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 30px 30px;"></div>
-        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md chat-enter relative z-10 border-t-4 border-emerald-600">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md active-section relative z-10 border-t-4 border-emerald-600">
             <div class="text-center mb-6">
-                <img src="logo.png" alt="Logo RAJIN" class="w-28 h-28 mx-auto mb-4 drop-shadow-md object-contain">
+                <img src="logo.png" alt="Logo RAJIN" class="w-24 h-24 mx-auto mb-4 drop-shadow-md object-contain">
                 <h1 class="text-3xl font-bold text-emerald-900 tracking-tight">RAJIN</h1>
                 <p class="text-sm text-gray-500 mt-1 font-medium">Rezeki Amanah Jaya Indonesia</p>
-                <div class="mt-3 inline-block px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100"><p class="text-[10px] text-emerald-700 font-semibold uppercase tracking-wide">Platform Bank Sampah Digital</p></div>
+                <div class="mt-3 inline-block px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100">
+                    <p class="text-[10px] text-emerald-700 font-semibold uppercase tracking-wide">Platform Bank Sampah Digital</p>
+                </div>
             </div>
 
-            <!-- Tab Login/Register -->
-            <div class="flex border-b border-gray-200 mb-6">
-                <button onclick="switchAuthTab('login')" id="tab-login" class="flex-1 py-2 text-sm font-bold text-emerald-600 border-b-2 border-emerald-600">Masuk</button>
-                <button onclick="switchAuthTab('register')" id="tab-register" class="flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700">Daftar Akun Baru</button>
-            </div>
-
-            <!-- Form Login -->
             <form id="login-form" class="space-y-4">
-                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Email</label><input type="email" id="login-email" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="email@rajin.id"></div>
-                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Password</label><input type="password" id="login-password" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="••••••••"></div>
-                <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-lg transition shadow-lg">Masuk Dashboard</button>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Email</label>
+                    <input type="email" id="login-email" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="admin@rajin.id">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Password</label>
+                    <input type="password" id="login-password" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="••••••••">
+                </div>
+                <button type="submit" id="btn-login" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-lg transition shadow-lg flex items-center justify-center gap-2">
+                    <span>Masuk Dashboard</span> <i class="fas fa-arrow-right"></i>
+                </button>
             </form>
-
-            <!-- Form Register -->
-            <form id="register-form" class="space-y-4 hidden-section">
-                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Nama Lengkap</label><input type="text" id="reg-nama" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50"></div>
-                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">No HP</label><input type="tel" id="reg-hp" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50"></div>
-                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Alamat Lengkap</label><input type="text" id="reg-alamat" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50"></div>
-                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Email</label><input type="email" id="reg-email" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50"></div>
-                <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Password</label><input type="password" id="reg-password" required minlength="6" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50"></div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition shadow-lg">Daftar & Menunggu Approval</button>
-                <p class="text-[10px] text-gray-400 text-center mt-2">Akun akan aktif setelah disetujui oleh Admin atau Pengurus Bank Sampah.</p>
-            </form>
-            
-            <div class="mt-6 text-center text-xs text-gray-400 border-t pt-4"><p>Butuh bantuan? Hubungi Admin Pusat RAJIN.</p></div>
+            <div class="mt-6 text-center text-xs text-gray-400 border-t pt-4">
+                <p>Butuh bantuan? Hubungi Admin Pusat RAJIN.</p>
+            </div>
         </div>
     </div>
 
-    <!-- HALAMAN MENUNGGU APPROVAL -->
+    <!-- PENDING PAGE -->
     <div id="pending-page" class="hidden-section flex-grow flex items-center justify-center p-4 bg-gray-100">
-        <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center chat-enter border-t-4 border-yellow-500">
+        <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center active-section border-t-4 border-yellow-500">
             <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-600 text-3xl"><i class="fas fa-hourglass-half"></i></div>
             <h2 class="text-2xl font-bold text-gray-900 mb-2">Menunggu Persetujuan</h2>
-            <p class="text-gray-600 mb-6">Akun Anda sedang ditinjau oleh Admin atau Pengurus Bank Sampah. Silakan tunggu hingga status akun Anda menjadi aktif.</p>
+            <p class="text-gray-600 mb-6">Akun Anda sedang ditinjau. Silakan tunggu hingga status aktif.</p>
             <button onclick="doLogout()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg transition">Keluar</button>
         </div>
     </div>
@@ -74,7 +73,10 @@
                 <div class="flex justify-between h-16">
                     <div class="flex items-center gap-3">
                         <img src="logo.png" alt="Logo" class="h-10 w-10 object-contain drop-shadow-sm">
-                        <div class="leading-tight"><h1 class="text-lg font-bold text-emerald-900 leading-none">RAJIN</h1><span class="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">Rezeki Amanah Jaya Indonesia</span></div>
+                        <div class="leading-tight">
+                            <h1 class="text-lg font-bold text-emerald-900 leading-none">RAJIN</h1>
+                            <span class="text-[9px] text-gray-500 uppercase tracking-widest font-semibold">Rezeki Amanah Jaya Indonesia</span>
+                        </div>
                     </div>
                     <div class="flex items-center space-x-4">
                         <div class="hidden md:block text-right border-r border-gray-200 pr-4">
@@ -91,10 +93,20 @@
             <!-- ADMIN DASHBOARD -->
             <div id="admin-dashboard" class="hidden-section space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-emerald-500"><p class="text-xs font-bold text-gray-400 uppercase">Total Bank Sampah</p><h3 class="text-3xl font-bold text-gray-900 mt-1" id="stat-total-bs">0</h3></div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500"><p class="text-xs font-bold text-gray-400 uppercase">Transaksi Hari Ini</p><h3 class="text-3xl font-bold text-gray-900 mt-1" id="stat-transaksi-hari">0</h3></div>
-                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-500"><p class="text-xs font-bold text-gray-400 uppercase">Penjualan Offtaker</p><h3 class="text-3xl font-bold text-gray-900 mt-1" id="stat-penjualan">Rp 0</h3></div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-emerald-500">
+                        <p class="text-xs font-bold text-gray-400 uppercase">Total Bank Sampah</p>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-1" id="stat-total-bs">...</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
+                        <p class="text-xs font-bold text-gray-400 uppercase">Transaksi Hari Ini</p>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-1" id="stat-transaksi-hari">...</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-purple-500">
+                        <p class="text-xs font-bold text-gray-400 uppercase">Penjualan Offtaker</p>
+                        <h3 class="text-3xl font-bold text-gray-900 mt-1" id="stat-penjualan">...</h3>
+                    </div>
                 </div>
+
                 <div class="border-b border-gray-200 bg-white rounded-t-xl px-6 pt-4">
                     <nav class="-mb-px flex space-x-8">
                         <button onclick="switchAdminTab('bs')" class="admin-tab active-tab border-emerald-500 text-emerald-600 whitespace-nowrap py-3 px-1 border-b-2 font-bold text-sm">Bank Sampah</button>
@@ -102,285 +114,330 @@
                         <button onclick="switchAdminTab('users')" class="admin-tab border-transparent text-gray-500 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">Approval User</button>
                     </nav>
                 </div>
+
                 <div id="tab-bs" class="admin-content bg-white rounded-b-xl shadow-sm p-6">
-                    <div class="flex justify-between items-center mb-6"><h3 class="text-lg font-bold text-gray-900">Daftar Bank Sampah</h3><button onclick="toggleModal('modal-add-bs')" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700"><i class="fas fa-plus mr-2"></i>Tambah Baru</button></div>
-                    <div class="overflow-x-auto rounded-lg border border-gray-200"><table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Nama</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Alamat</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Kontak</th></tr></thead><tbody id="table-bs-body" class="bg-white divide-y divide-gray-200 text-sm"></tbody></table></div>
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-bold text-gray-900">Daftar Bank Sampah</h3>
+                        <button onclick="toggleModal('modal-add-bs')" class="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700"><i class="fas fa-plus mr-2"></i>Tambah Baru</button>
+                    </div>
+                    <div class="overflow-x-auto rounded-lg border border-gray-200">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Nama</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Alamat</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Kontak</th></tr></thead>
+                            <tbody id="table-bs-body" class="bg-white divide-y divide-gray-200 text-sm"><tr><td colspan="3" class="p-4 text-center text-gray-400">Memuat data...</td></tr></tbody>
+                        </table>
+                    </div>
                 </div>
+
                 <div id="tab-harga" class="admin-content hidden-section bg-white rounded-b-xl shadow-sm p-6">
-                    <div class="flex justify-between items-center mb-6"><h3 class="text-lg font-bold text-gray-900">Master Harga Offtaker</h3><div class="flex space-x-2"><label class="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 flex items-center"><i class="fas fa-upload mr-2"></i>Import CSV<input type="file" id="csv-import-offtaker" accept=".csv" class="hidden" onchange="handleImportOfftaker(this)"></label><button onclick="exportOfftakerCSV()" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700"><i class="fas fa-download mr-2"></i>Export</button></div></div>
-                    <div class="overflow-x-auto max-h-[500px] rounded-lg border border-gray-200"><table class="min-w-full divide-y divide-gray-200"><thead class="bg-gray-50 sticky top-0"><tr><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Jenis Sampah</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Harga Default</th></tr></thead><tbody id="table-offtaker-body" class="bg-white divide-y divide-gray-200 text-sm"></tbody></table></div>
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-bold text-gray-900">Master Harga Offtaker</h3>
+                        <div class="flex space-x-2">
+                            <label class="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 flex items-center"><i class="fas fa-upload mr-2"></i>Import CSV<input type="file" id="csv-import-offtaker" accept=".csv" class="hidden" onchange="handleImportOfftaker(this)"></label>
+                            <button onclick="exportOfftakerCSV()" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-700"><i class="fas fa-download mr-2"></i>Export</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto max-h-[500px] rounded-lg border border-gray-200">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50 sticky top-0"><tr><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Jenis Sampah</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Harga Default</th></tr></thead>
+                            <tbody id="table-offtaker-body" class="bg-white divide-y divide-gray-200 text-sm"><tr><td colspan="2" class="p-4 text-center text-gray-400">Memuat data...</td></tr></tbody>
+                        </table>
+                    </div>
                 </div>
+
                 <div id="tab-users" class="admin-content hidden-section bg-white rounded-b-xl shadow-sm p-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-6">Permintaan Approval User</h3>
                     <div class="overflow-x-auto rounded-lg border border-gray-200">
                         <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Nama</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Email</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Role Diminta</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Bank Sampah</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Aksi</th></tr></thead>
-                            <tbody id="table-pending-admin" class="bg-white divide-y divide-gray-200 text-sm"></tbody>
+                            <thead class="bg-gray-50"><tr><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Nama</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Email</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Role</th><th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Aksi</th></tr></thead>
+                            <tbody id="table-pending-admin" class="bg-white divide-y divide-gray-200 text-sm"><tr><td colspan="4" class="p-4 text-center text-gray-400">Memuat data...</td></tr></tbody>
                         </table>
                     </div>
                 </div>
             </div>
-
-            <!-- PENGURUS DASHBOARD -->
-            <div id="pengurus-dashboard" class="hidden-section space-y-6">
-                <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-lg flex justify-between items-center"><div><h2 class="text-xl font-bold" id="pengurus-nama-bs">Bank Sampah Saya</h2><p class="text-emerald-100 text-sm">Kelola transaksi dan anggota</p></div><div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20"><p class="text-xs text-emerald-100 uppercase font-bold">Tabungan Nasabah</p><h3 class="text-2xl font-bold" id="pengurus-total-tabungan">Rp 0</h3></div></div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <h3 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b">Input Setor Sampah</h3>
-                        <form id="form-transaksi" class="space-y-4">
-                            <select id="trx-nasabah" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50"></select>
-                            <div class="grid grid-cols-2 gap-4">
-                                <select id="trx-jenis" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50" onchange="updateTrxPreview()"></select>
-                                <input type="number" id="trx-berat" step="0.01" class="w-full border rounded-lg p-2.5 text-sm" oninput="updateTrxPreview()" placeholder="Berat/Jumlah">
-                            </div>
-                            <div class="grid grid-cols-2 gap-4">
-                                <select id="trx-kategori" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50"><option value="beli">Beli</option><option value="sedekah">Sedekah</option></select>
-                                <select id="trx-status" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50"><option value="ditabung">Ditabung</option><option value="dibayar">Dibayar</option></select>
-                            </div>
-                            <div class="bg-emerald-50 p-4 rounded-lg flex justify-between items-center border border-emerald-100"><span class="text-sm font-medium text-emerald-800">Total:</span><span class="text-xl font-bold text-emerald-700" id="trx-preview-total">Rp 0</span></div>
-                            <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700">Simpan Transaksi</button>
-                        </form>
-                    </div>
-                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <h3 class="text-lg font-bold text-gray-900 mb-4 pb-2 border-b">Approval Anggota</h3>
-                        <div class="overflow-y-auto max-h-80 pr-2 border rounded-lg">
-                            <table class="min-w-full text-sm"><thead class="bg-gray-50 sticky top-0"><tr><th class="py-3 px-4 text-left font-bold text-gray-500 uppercase text-xs">Nama</th><th class="py-3 px-4 text-left font-bold text-gray-500 uppercase text-xs">Role</th><th class="py-3 px-4 text-right font-bold text-gray-500 uppercase text-xs">Aksi</th></tr></thead><tbody id="table-pending-pengurus" class="divide-y divide-gray-100"></tbody></table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- NASABAH DASHBOARD -->
-            <div id="nasabah-dashboard" class="hidden-section space-y-6">
-                <div class="bg-gradient-to-br from-emerald-600 to-teal-800 rounded-2xl p-8 text-white shadow-xl"><div class="relative z-10"><p class="text-emerald-100 text-xs font-bold uppercase">Selamat Datang,</p><h2 class="text-2xl font-bold mb-6" id="nasabah-nama">Nama Nasabah</h2><div class="grid grid-cols-2 gap-4"><div class="bg-white/10 backdrop-blur-md rounded-xl p-4"><p class="text-xs text-emerald-100 uppercase font-bold">Saldo Ditabung</p><h3 class="text-2xl font-bold" id="nasabah-saldo-tabung">Rp 0</h3></div><div class="bg-white/10 backdrop-blur-md rounded-xl p-4"><p class="text-xs text-emerald-100 uppercase font-bold">Total Setoran</p><h3 class="text-2xl font-bold" id="nasabah-total-setor">0 Kg</h3></div></div></div></div>
-                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg"><h3 class="text-sm font-bold text-yellow-800">Update Harga Terbaru</h3><p class="text-sm text-yellow-700 mt-1" id="nasabah-harga-update">Memuat...</p></div>
-                <div class="bg-white rounded-xl shadow-sm p-6"><h3 class="text-lg font-bold text-gray-900 mb-4">Riwayat Setoran</h3><div class="space-y-3" id="nasabah-riwayat-list"></div></div>
-            </div>
         </main>
 
-        <footer class="bg-white border-t border-gray-200 py-6 mt-auto"><div class="max-w-7xl mx-auto px-4 flex justify-between items-center"><div class="flex items-center gap-2"><img src="logo.png" class="h-8 w-8 object-contain"><div><p class="text-sm font-bold text-emerald-800">RAJIN</p><p class="text-[10px] text-gray-500">Rezeki Amanah Jaya Indonesia</p></div></div><p class="text-xs text-gray-400">&copy; 2026 CV Rezeki Amanah Jaya Group.</p></div></footer>
+        <footer class="bg-white border-t border-gray-200 py-6 mt-auto">
+            <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <img src="logo.png" class="h-8 w-8 object-contain">
+                    <div><p class="text-sm font-bold text-emerald-800">RAJIN</p><p class="text-[10px] text-gray-500">Rezeki Amanah Jaya Indonesia</p></div>
+                </div>
+                <p class="text-xs text-gray-400">&copy; 2026 CV Rezeki Amanah Jaya Group.</p>
+            </div>
+        </footer>
     </div>
 
-    <!-- CHAT HELPER -->
-    <div class="fixed bottom-6 right-6 z-50">
-        <div id="chat-window" class="hidden-section absolute bottom-16 right-0 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden chat-enter flex flex-col max-h-[500px]">
-            <div class="bg-emerald-700 p-4 text-white flex justify-between items-center shrink-0"><div class="flex items-center gap-3"><div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center"><i class="fas fa-robot"></i></div><div><h4 class="font-bold text-sm">Asisten RAJIN</h4><p class="text-[10px] text-emerald-200">Online</p></div></div><button onclick="toggleChat()" class="text-white/70 hover:text-white"><i class="fas fa-times"></i></button></div>
-            <div class="p-4 flex-grow overflow-y-auto bg-gray-50 space-y-4" id="chat-messages"><div class="flex items-start gap-2"><div class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center shrink-0"><i class="fas fa-robot text-emerald-600 text-xs"></i></div><div class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-sm text-gray-700 border border-gray-100">Halo! Ada yang bisa dibantu?</div></div></div>
-            <div class="p-3 bg-white border-t border-gray-100 shrink-0"><div class="flex flex-wrap gap-2"><button onclick="askFaq('tutorial_setor')" class="text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full border border-emerald-200">Cara Setor</button><button onclick="askFaq('update_harga')" class="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full border border-blue-200">Cek Harga</button></div></div>
-        </div>
-        <button onclick="toggleChat()" class="bg-emerald-600 hover:bg-emerald-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition transform hover:scale-110 border-4 border-white"><i class="fas fa-comment-dots text-2xl"></i></button>
-    </div>
-
-    <!-- MODALS -->
+    <!-- MODAL ADD BS -->
     <div id="modal-add-bs" class="hidden-section fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 chat-enter border-t-4 border-emerald-600">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 active-section border-t-4 border-emerald-600">
             <h3 class="text-lg font-bold mb-4">Tambah Bank Sampah</h3>
             <form id="form-add-bs" class="space-y-4">
                 <input type="text" id="new-bs-nama" required placeholder="Nama Bank Sampah" class="w-full border rounded-lg p-2.5">
                 <input type="text" id="new-bs-alamat" placeholder="Alamat" class="w-full border rounded-lg p-2.5">
                 <input type="text" id="new-bs-hp" placeholder="No HP" class="w-full border rounded-lg p-2.5">
-                <div class="flex justify-end space-x-3 pt-4"><button type="button" onclick="toggleModal('modal-add-bs')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Batal</button><button type="submit" class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold">Simpan</button></div>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="toggleModal('modal-add-bs')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Batal</button>
+                    <button type="submit" class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold">Simpan</button>
+                </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL APPROVE USER (ADMIN) -->
-    <div id="modal-approve-user" class="hidden-section fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 chat-enter border-t-4 border-blue-600">
-            <h3 class="text-lg font-bold mb-4">Approve User</h3>
-            <input type="hidden" id="approve-user-id">
-            <div class="space-y-4">
-                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Role</label><select id="approve-role" class="w-full border rounded-lg p-2.5"><option value="pengurus">Pengurus</option><option value="nasabah">Nasabah</option></select></div>
-                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Bank Sampah</label><select id="approve-bank" class="w-full border rounded-lg p-2.5"></select></div>
-                <div class="flex justify-end space-x-3 pt-4"><button type="button" onclick="toggleModal('modal-approve-user')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Batal</button><button onclick="submitApproveUser()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold">Approve</button></div>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // PERBAIKAN UTAMA: Ganti nama variabel 'supabase' jadi 'supabaseClient'
+        // ==========================================
+        // KONFIGURASI SUPABASE (GANTI DENGAN PUNYA KAMU!)
+        // ==========================================
         const SUPABASE_URL = 'https://woqifznkmbsjxelzhmjk.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'sb_publishable_3iBnO0BYibh8Y8WJwXI0hg_X3iho_pj';
+        const SUPABASE_ANON_KEY = 'sb_publishable_3iBnO0BYibh8Y8WJwXI0hg_X3iho_pj'; 
         
-        // Inisialisasi client dengan nama berbeda biar gak bentrok
+        // Inisialisasi client dengan nama unik biar gak bentrok
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let currentUser = null, currentProfile = null, jenisSampahList = [], hargaOfftakerMap = {}; 
+        let currentUser = null, currentProfile = null;
+        let jenisSampahList = [], hargaOfftakerMap = {}; 
 
         async function initApp() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session) await handleLoginSuccess(session.user);
-            else showSection('login-page');
+            console.log("🚀 Aplikasi RAJIN dimulai...");
+            const { data: { session }, error } = await supabaseClient.auth.getSession();
+            
+            if (error) console.error("Error getSession:", error);
+            
+            if (session) {
+                console.log("Session ditemukan, mencoba login...", session.user.email);
+                await handleLoginSuccess(session.user);
+            } else {
+                console.log("Tidak ada session, tampilkan halaman login.");
+                showSection('login-page');
+            }
         }
 
-        function switchAuthTab(tab) {
-            document.getElementById('login-form').classList.toggle('hidden-section', tab !== 'login');
-            document.getElementById('register-form').classList.toggle('hidden-section', tab !== 'register');
-            document.getElementById('tab-login').className = tab === 'login' ? 'flex-1 py-2 text-sm font-bold text-emerald-600 border-b-2 border-emerald-600' : 'flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700';
-            document.getElementById('tab-register').className = tab === 'register' ? 'flex-1 py-2 text-sm font-bold text-blue-600 border-b-2 border-blue-600' : 'flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700';
-        }
-
-        // LOGIN
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const { data, error } = await supabaseClient.auth.signInWithPassword({ email: document.getElementById('login-email').value, password: document.getElementById('login-password').value });
-            if (error) alert('Login Gagal: ' + error.message);
-            else await handleLoginSuccess(data.user);
-        });
+            const btn = document.getElementById('btn-login');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+            btn.disabled = true;
 
-        // REGISTER
-        document.getElementById('register-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('reg-email').value;
-            const password = document.getElementById('reg-password').value;
-            const nama = document.getElementById('reg-nama').value;
-            const hp = document.getElementById('reg-hp').value;
-            const alamat = document.getElementById('reg-alamat').value;
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
 
-            const { data, error } = await supabaseClient.auth.signUp({ email, password });
-            if (error) { alert('Daftar Gagal: ' + error.message); return; }
-
-            // Buat profile pending
-            await supabaseClient.from('profiles').insert({ id: data.user.id, role: 'pending', nama_lengkap: nama, no_hp: hp, alamat: alamat });
+            console.log("Mencoba login untuk:", email);
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
             
-            alert('Pendaftaran berhasil! Akun Anda sedang menunggu persetujuan Admin/Pengurus.');
-            switchAuthTab('login');
-            e.target.reset();
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+
+            if (error) {
+                console.error("Login Error:", error);
+                alert('Login Gagal: ' + error.message);
+            } else {
+                console.log("Login berhasil, memuat profil...");
+                await handleLoginSuccess(data.user);
+            }
         });
 
         async function handleLoginSuccess(user) {
             currentUser = user;
-            const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
+            console.log("Mengambil profil untuk UID:", user.id);
             
-            if (!profile || profile.role === 'pending') {
-                showSection('pending-page');
+            // Ambil profil user
+            const { data: profile, error: profileError } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+            
+            if (profileError) {
+                console.error("Error mengambil profil:", profileError);
+                alert('Gagal memuat profil: ' + profileError.message);
+                return;
+            }
+
+            if (!profile) {
+                console.warn("Profil tidak ditemukan untuk user ini.");
+                alert('Error: Profil tidak ditemukan. Hubungi Admin.');
+                await doLogout();
                 return;
             }
             
+            console.log("Profil ditemukan:", profile);
             currentProfile = profile;
-            document.getElementById('user-name').textContent = profile.nama_lengkap;
-            document.getElementById('user-role').textContent = profile.role;
+            
+            // Update UI Navbar
+            document.getElementById('user-name').textContent = profile.nama_lengkap || 'User';
+            document.getElementById('user-role').textContent = profile.role || 'Unknown';
+
+            // Load Data Master
             await loadMasterData();
+
+            // Tampilkan App Container
             showSection('app-container');
             
-            if (profile.role === 'admin') await loadAdminDashboard();
-            else if (profile.role === 'pengurus') await loadPengurusDashboard();
-            else if (profile.role === 'nasabah') await loadNasabahDashboard();
+            // Redirect sesuai Role
+            if (profile.role === 'admin') {
+                console.log("Role Admin detected, loading admin dashboard...");
+                await loadAdminDashboard();
+            } else if (profile.role === 'pending') {
+                showSection('pending-page');
+            } else {
+                alert('Role "' + profile.role + '" belum memiliki dashboard khusus.');
+            }
         }
 
-        async function doLogout() { await supabaseClient.auth.signOut(); window.location.reload(); }
-        function showSection(id) { ['login-page', 'pending-page', 'app-container'].forEach(s => { const el = document.getElementById(s); if(el) { el.classList.add('hidden-section'); el.classList.remove('active-section'); } }); const t = document.getElementById(id); if(t) { t.classList.remove('hidden-section'); t.classList.add('active-section'); } }
+        async function doLogout() { 
+            await supabaseClient.auth.signOut(); 
+            window.location.reload(); 
+        }
+
+        function showSection(id) { 
+            ['login-page', 'pending-page', 'app-container'].forEach(s => { 
+                const el = document.getElementById(s); 
+                if(el) { el.classList.add('hidden-section'); el.classList.remove('active-section'); } 
+            }); 
+            const t = document.getElementById(id); 
+            if(t) { t.classList.remove('hidden-section'); t.classList.add('active-section'); } 
+        }
 
         async function loadMasterData() {
-            const { data: js } = await supabaseClient.from('jenis_sampah').select('*').order('nama_sampah'); jenisSampahList = js || [];
-            const { data: ho } = await supabaseClient.from('harga_offtaker').select('jenis_sampah_id, harga_per_kg').is('bank_sampah_id', null); hargaOfftakerMap = {}; (ho || []).forEach(h => hargaOfftakerMap[h.jenis_sampah_id] = h.harga_per_kg);
+            console.log("📦 Memulai loadMasterData...");
+            
+            // Load Jenis Sampah
+            const { data: js, error: errJs } = await supabaseClient.from('jenis_sampah').select('*').order('nama_sampah');
+            if (errJs) console.error("Error load jenis_sampah:", errJs);
+            else console.log(`✅ Berhasil load ${js?.length || 0} jenis sampah`);
+            
+            jenisSampahList = js || [];
+
+            // Load Harga Offtaker Default
+            const { data: ho, error: errHo } = await supabaseClient.from('harga_offtaker').select('jenis_sampah_id, harga_per_kg').is('bank_sampah_id', null);
+            if (errHo) console.error("Error load harga_offtaker:", errHo);
+            else console.log(`✅ Berhasil load ${ho?.length || 0} harga offtaker`);
+
+            hargaOfftakerMap = {};
+            (ho || []).forEach(h => hargaOfftakerMap[h.jenis_sampah_id] = h.harga_per_kg);
         }
-        function formatRupiah(a) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(a); }
+
+        function formatRupiah(a) { 
+            return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(a); 
+        }
 
         // ADMIN LOGIC
         async function loadAdminDashboard() {
+            console.log("📊 Memulai loadAdminDashboard...");
             document.getElementById('admin-dashboard').classList.remove('hidden-section');
-            const { count } = await supabaseClient.from('bank_sampah').select('*', { count: 'exact', head: true }); document.getElementById('stat-total-bs').textContent = count || 0;
-            loadTableBankSampah(); loadTableHargaOfftaker(); loadPendingUsersAdmin();
-        }
-        function switchAdminTab(t) { document.querySelectorAll('.admin-tab').forEach(b => { b.className = 'admin-tab border-transparent text-gray-500 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm'; }); event.currentTarget.className = 'admin-tab active-tab border-emerald-500 text-emerald-600 whitespace-nowrap py-3 px-1 border-b-2 font-bold text-sm'; document.querySelectorAll('.admin-content').forEach(c => c.classList.add('hidden-section')); document.getElementById(`tab-${t}`).classList.remove('hidden-section'); }
-        
-        async function loadTableBankSampah() { const { data } = await supabaseClient.from('bank_sampah').select('*').order('created_at', { ascending: false }); const tb = document.getElementById('table-bs-body'); tb.innerHTML = ''; (data||[]).forEach(r => tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${r.nama_bank}</td><td class="px-6 py-4 text-gray-600">${r.alamat||'-'}</td><td class="px-6 py-4 text-gray-600">${r.no_hp||'-'}</td></tr>`); }
-        async function loadTableHargaOfftaker() { const { data } = await supabaseClient.from('harga_offtaker').select('*, jenis_sampah(nama_sampah)').is('bank_sampah_id', null).order('jenis_sampah(nama_sampah)'); const tb = document.getElementById('table-offtaker-body'); tb.innerHTML = ''; (data||[]).forEach(h => tb.innerHTML += `<tr><td class="px-6 py-3 font-medium">${h.jenis_sampah?.nama_sampah}</td><td class="px-6 py-3 text-emerald-700 font-bold">${formatRupiah(h.harga_per_kg)}</td></tr>`); }
-        
-        async function loadPendingUsersAdmin() {
-            const { data } = await supabaseClient.from('profiles').select('*, bank_sampah(nama_bank)').eq('role', 'pending');
-            const tb = document.getElementById('table-pending-admin'); tb.innerHTML = '';
-            (data||[]).forEach(u => {
-                tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${u.nama_lengkap}</td><td class="px-6 py-4 text-gray-600">${u.email || '-'}</td><td class="px-6 py-4"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-bold">Pending</span></td><td class="px-6 py-4 text-gray-600">-</td><td class="px-6 py-4"><button onclick="openApproveModal('${u.id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">Approve</button></td></tr>`;
-            });
-        }
+            
+            // Stats
+            const { count: countBs } = await supabaseClient.from('bank_sampah').select('*', { count: 'exact', head: true });
+            document.getElementById('stat-total-bs').textContent = countBs || 0;
+            document.getElementById('stat-transaksi-hari').textContent = "0"; // Dummy dulu
+            document.getElementById('stat-penjualan').textContent = "Rp 0"; // Dummy dulu
+            
+            console.log(`📊 Total Bank Sampah: ${countBs}`);
 
-        async function openApproveModal(userId) {
-            document.getElementById('approve-user-id').value = userId;
-            const { data: bs } = await supabaseClient.from('bank_sampah').select('*').order('nama_bank');
-            const sel = document.getElementById('approve-bank'); sel.innerHTML = '';
-            (bs||[]).forEach(b => sel.innerHTML += `<option value="${b.id}">${b.nama_bank}</option>`);
-            toggleModal('modal-approve-user');
-        }
-
-        async function submitApproveUser() {
-            const userId = document.getElementById('approve-user-id').value;
-            const role = document.getElementById('approve-role').value;
-            const bankId = document.getElementById('approve-bank').value;
-            
-            await supabaseClient.from('profiles').update({ role: role, bank_sampah_id: bankId }).eq('id', userId);
-            
-            // Jika nasabah, buat entry di tabel nasabah
-            if (role === 'nasabah') {
-                await supabaseClient.from('nasabah').insert({ profile_id: userId, bank_sampah_id: bankId });
-            }
-            
-            alert('User berhasil di-approve!');
-            toggleModal('modal-approve-user');
+            loadTableBankSampah(); 
+            loadTableHargaOfftaker(); 
             loadPendingUsersAdmin();
         }
 
-        // PENGURUS LOGIC
-        async function loadPengurusDashboard() {
-            document.getElementById('pengurus-dashboard').classList.remove('hidden-section');
-            const { data: bs } = await supabaseClient.from('bank_sampah').select('*').eq('id', currentProfile.bank_sampah_id).single();
-            document.getElementById('pengurus-nama-bs').textContent = bs?.nama_bank || 'Bank Sampah Saya';
+        function switchAdminTab(t) { 
+            document.querySelectorAll('.admin-tab').forEach(b => { 
+                b.className = 'admin-tab border-transparent text-gray-500 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm'; 
+            }); 
+            event.currentTarget.className = 'admin-tab active-tab border-emerald-500 text-emerald-600 whitespace-nowrap py-3 px-1 border-b-2 font-bold text-sm'; 
             
-            // Load Pending Users untuk bank sampah ini
-            const { data: pending } = await supabaseClient.from('profiles').select('*').eq('role', 'pending').eq('bank_sampah_id', currentProfile.bank_sampah_id);
-            const tb = document.getElementById('table-pending-pengurus'); tb.innerHTML = '';
-            (pending||[]).forEach(u => {
-                tb.innerHTML += `<tr><td class="py-3 px-4 font-medium">${u.nama_lengkap}</td><td class="py-3 px-4 text-xs text-gray-500">Menunggu</td><td class="py-3 px-4 text-right"><button onclick="approveUserByPengurus('${u.id}')" class="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700">Accept</button></td></tr>`;
-            });
-
-            // Load Dropdown Nasabah & Jenis Sampah
-            const { data: nasabah } = await supabaseClient.from('nasabah').select('*, profiles(nama_lengkap)').eq('bank_sampah_id', currentProfile.bank_sampah_id);
-            const selN = document.getElementById('trx-nasabah'); selN.innerHTML = '<option value="">-- Pilih Nasabah --</option>';
-            (nasabah||[]).forEach(n => selN.innerHTML += `<option value="${n.id}">${n.profiles?.nama_lengkap}</option>`);
-
-            const selJ = document.getElementById('trx-jenis'); selJ.innerHTML = '<option value="">-- Pilih Sampah --</option>';
-            const { data: hn } = await supabaseClient.from('harga_nasabah').select('*').eq('bank_sampah_id', currentProfile.bank_sampah_id);
-            const hnm = {}; (hn||[]).forEach(h => hnm[h.jenis_sampah_id] = h);
+            document.querySelectorAll('.admin-content').forEach(c => c.classList.add('hidden-section')); 
+            document.getElementById(`tab-${t}`).classList.remove('hidden-section'); 
+        }
+        
+        async function loadTableBankSampah() { 
+            console.log("🏢 Memuat tabel Bank Sampah...");
+            const { data, error } = await supabaseClient.from('bank_sampah').select('*').order('created_at', { ascending: false }); 
             
-            jenisSampahList.forEach(js => {
-                const hd = hargaOfftakerMap[js.id] || 0; const st = hnm[js.id];
-                let fp = 0; let ml = 'Persen (30%)';
-                if(st) { if(st.mode_harga==='custom'){fp=st.harga_custom;ml='Custom'} else if(st.mode_harga==='offtaker'){fp=hd;ml='Ikut Offtaker'} else {fp=hd*(1-st.persentase/100);ml=`Persen (${st.persentase}%)`} } else { fp=hd*0.7; }
-                const opt = document.createElement('option'); opt.value=js.id; opt.textContent=js.nama_sampah; opt.dataset.harga=fp; opt.dataset.satuan=js.satuan; selJ.appendChild(opt);
-            });
+            if (error) {
+                console.error("Error load bank_sampah:", error);
+                document.getElementById('table-bs-body').innerHTML = `<tr><td colspan="3" class="p-4 text-center text-red-500">Error: ${error.message}</td></tr>`;
+                return;
+            }
+
+            const tb = document.getElementById('table-bs-body'); 
+            tb.innerHTML = ''; 
+            
+            if (!data || data.length === 0) {
+                tb.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-400">Belum ada data bank sampah.</td></tr>';
+                return;
+            }
+
+            (data||[]).forEach(r => tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${r.nama_bank}</td><td class="px-6 py-4 text-gray-600">${r.alamat||'-'}</td><td class="px-6 py-4 text-gray-600">${r.no_hp||'-'}</td></tr>`); 
         }
 
-        async function approveUserByPengurus(userId) {
-            await supabaseClient.from('profiles').update({ role: 'nasabah' }).eq('id', userId);
-            await supabaseClient.from('nasabah').insert({ profile_id: userId, bank_sampah_id: currentProfile.bank_sampah_id });
-            alert('Nasabah berhasil di-accept!');
-            loadPengurusDashboard();
+        async function loadTableHargaOfftaker() { 
+            console.log(" Memuat tabel Harga Offtaker...");
+            const { data, error } = await supabaseClient.from('harga_offtaker').select('*, jenis_sampah(nama_sampah)').is('bank_sampah_id', null).order('jenis_sampah(nama_sampah)'); 
+            
+            if (error) {
+                console.error("Error load harga_offtaker:", error);
+                document.getElementById('table-offtaker-body').innerHTML = `<tr><td colspan="2" class="p-4 text-center text-red-500">Error: ${error.message}</td></tr>`;
+                return;
+            }
+
+            const tb = document.getElementById('table-offtaker-body'); 
+            tb.innerHTML = ''; 
+            
+            if (!data || data.length === 0) {
+                tb.innerHTML = '<tr><td colspan="2" class="p-4 text-center text-gray-400">Belum ada data harga.</td></tr>';
+                return;
+            }
+
+            (data||[]).forEach(h => tb.innerHTML += `<tr><td class="px-6 py-3 font-medium">${h.jenis_sampah?.nama_sampah || 'Unknown'}</td><td class="px-6 py-3 text-emerald-700 font-bold">${formatRupiah(h.harga_per_kg)}</td></tr>`); 
         }
+        
+        async function loadPendingUsersAdmin() {
+            console.log("👥 Memuat pending users...");
+            const { data, error } = await supabaseClient.from('profiles').select('*').eq('role', 'pending');
+            
+            if (error) {
+                console.error("Error load pending users:", error);
+                return;
+            }
 
-        function updateTrxPreview() { const s=document.getElementById('trx-jenis'); const b=parseFloat(document.getElementById('trx-berat').value)||0; const o=s.options[s.selectedIndex]; if(o&&o.value){document.getElementById('trx-preview-total').textContent=formatRupiah((parseFloat(o.dataset.harga)||0)*b);}else{document.getElementById('trx-preview-total').textContent='Rp 0';} }
-        document.getElementById('form-transaksi').addEventListener('submit', async(e)=>{e.preventDefault(); const ni=document.getElementById('trx-nasabah').value; const ji=document.getElementById('trx-jenis').value; const b=parseFloat(document.getElementById('trx-berat').value); if(!ni||!ji||!b){alert('Lengkapi data!');return;} const s=document.getElementById('trx-jenis'); const h=parseFloat(s.options[s.selectedIndex].dataset.harga); const t=h*b; const {error}=await supabaseClient.from('transaksi').insert({bank_sampah_id:currentProfile.bank_sampah_id,nasabah_id:ni,jenis_sampah_id:ji,berat_kg:b,harga_saat_transaksi:h,total_harga:t,kategori_transaksi:document.getElementById('trx-kategori').value,status_bayar:document.getElementById('trx-status').value}); if(error)alert('Gagal: '+error.message); else{alert('Berhasil!');e.target.reset();document.getElementById('trx-preview-total').textContent='Rp 0';}});
+            const tb = document.getElementById('table-pending-admin'); 
+            tb.innerHTML = '';
+            
+            if (!data || data.length === 0) {
+                tb.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-400">Tidak ada permintaan approval.</td></tr>';
+                return;
+            }
 
-        // NASABAH LOGIC
-        async function loadNasabahDashboard() {
-            document.getElementById('nasabah-dashboard').classList.remove('hidden-section');
-            const { data: nData } = await supabaseClient.from('nasabah').select('*').eq('profile_id', currentProfile.id).single();
-            if(nData){document.getElementById('nasabah-nama').textContent=currentProfile.nama_lengkap;document.getElementById('nasabah-saldo-tabung').textContent=formatRupiah(nData.saldo_tabungan||0);}
-            const { data: trx } = await supabaseClient.from('transaksi').select('*, jenis_sampah(nama_sampah, satuan)').eq('nasabah_id', nData?.id).order('tanggal_transaksi',{ascending:false});
-            const lc=document.getElementById('nasabah-riwayat-list'); lc.innerHTML=''; let tb=0;
-            (trx||[]).forEach(t=>{tb+=t.berat_kg; lc.innerHTML+=`<div class="flex justify-between items-center p-4 bg-white rounded-xl border border-gray-100 shadow-sm"><div><p class="font-bold text-gray-900">${t.jenis_sampah?.nama_sampah}</p><p class="text-xs text-gray-500">${new Date(t.tanggal_transaksi).toLocaleDateString('id-ID')} • ${t.berat_kg} ${t.jenis_sampah?.satuan}</p></div><div class="text-right"><p class="font-bold text-emerald-700">${formatRupiah(t.total_harga)}</p><span class="text-[10px] px-2 py-0.5 rounded-full ${t.status_bayar==='dibayar'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}">${t.status_bayar==='dibayar'?'Dibayar':'Ditabung'}</span></div></div>`;});
-            document.getElementById('nasabah-total-setor').textContent=tb.toFixed(1)+' Kg';
+            (data||[]).forEach(u => {
+                tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${u.nama_lengkap}</td><td class="px-6 py-4 text-gray-600">${u.email || '-'}</td><td class="px-6 py-4"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-bold">Pending</span></td><td class="px-6 py-4"><button class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">Approve</button></td></tr>`;
+            });
         }
 
         // UTILS
-        async function handleImportOfftaker(input){const f=input.files[0];if(!f)return;const t=await f.text();const l=t.split('\n').slice(1);let c=0;for(let ln of l){const[n,h]=ln.split(',');if(n&&h){const hv=parseFloat(h.replace(/[^0-9.-]+/g,""));const j=jenisSampahList.find(x=>x.nama_sampah.toLowerCase().includes(n.trim().toLowerCase()));if(j&&!isNaN(hv)){await supabaseClient.from('harga_offtaker').upsert({jenis_sampah_id:j.id,bank_sampah_id:null,harga_per_kg:hv},{onConflict:'jenis_sampah_id, bank_sampah_id'});c++;}}}alert(`Import ${c} data sukses!`);loadTableHargaOfftaker();input.value='';}
-        function exportOfftakerCSV(){let c='Nama Sampah,Harga Per Kg\n';jenisSampahList.forEach(j=>{c+=`"${j.nama_sampah}",${hargaOfftakerMap[j.id]||0}\n`;});const b=new Blob([c],{type:'text/csv'});const u=window.URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='harga_offtaker_rajin.csv';a.click();}
         function toggleModal(id){document.getElementById(id).classList.toggle('hidden-section');}
-        function toggleChat(){document.getElementById('chat-window').classList.toggle('hidden-section');}
-        function addChatMessage(t,u=false){const c=document.getElementById('chat-messages');const d=document.createElement('div');d.className=`flex items-start gap-2 ${u?'flex-row-reverse':''}`;d.innerHTML=`<div class="w-8 h-8 ${u?'bg-blue-100':'bg-emerald-100'} rounded-full flex items-center justify-center shrink-0"><i class="fas ${u?'fa-user text-blue-600':'fa-robot text-emerald-600'} text-xs"></i></div><div class="${u?'bg-emerald-600 text-white rounded-tr-none':'bg-white text-gray-700 rounded-tl-none shadow-sm border border-gray-100'} p-3 rounded-2xl text-sm max-w-[85%]">${t}</div>`;c.appendChild(d);c.scrollTop=c.scrollHeight;}
-        const faqDB={'tutorial_setor':'1. Login<br>2. Pilih Sampah & Berat<br>3. Klik Simpan','update_harga':'Cek harga di dashboard...'};
-        async function askFaq(k){addChatMessage(k==='tutorial_setor'?'Cara setor?':'Cek harga?',true);setTimeout(()=>addChatMessage(faqDB[k]||'Tanya admin ya!'),500);}
+        
+        // Form Add BS
+        document.getElementById('form-add-bs').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nama = document.getElementById('new-bs-nama').value;
+            const alamat = document.getElementById('new-bs-alamat').value;
+            const hp = document.getElementById('new-bs-hp').value;
 
+            const { error } = await supabaseClient.from('bank_sampah').insert({ nama_bank: nama, alamat: alamat, no_hp: hp });
+            
+            if (error) {
+                alert('Gagal simpan: ' + error.message);
+            } else {
+                alert('Bank Sampah berhasil ditambahkan!');
+                toggleModal('modal-add-bs');
+                loadTableBankSampah(); // Refresh tabel
+                // Update statistik
+                const { count } = await supabaseClient.from('bank_sampah').select('*', { count: 'exact', head: true });
+                document.getElementById('stat-total-bs').textContent = count || 0;
+            }
+        });
+
+        // Init App on Load
         window.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
