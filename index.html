@@ -63,7 +63,7 @@
             <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-600 text-3xl"><i class="fas fa-hourglass-half"></i></div>
             <h2 class="text-2xl font-bold text-gray-900 mb-2">Menunggu Persetujuan</h2>
             <p class="text-gray-600 mb-6">Akun Anda sedang ditinjau oleh Admin atau Pengurus Bank Sampah. Silakan tunggu hingga status akun Anda menjadi aktif.</p>
-            <button onclick="logout()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg transition">Keluar</button>
+            <button onclick="doLogout()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg transition">Keluar</button>
         </div>
     </div>
 
@@ -81,7 +81,7 @@
                             <p id="user-name" class="text-sm font-bold text-gray-800">User Name</p>
                             <p id="user-role" class="text-[10px] text-emerald-600 font-bold uppercase tracking-wide bg-emerald-50 px-2 py-0.5 rounded inline-block">Role</p>
                         </div>
-                        <button onclick="logout()" class="text-gray-400 hover:text-red-600 transition p-2 rounded-full hover:bg-red-50"><i class="fas fa-sign-out-alt text-xl"></i></button>
+                        <button onclick="doLogout()" class="text-gray-400 hover:text-red-600 transition p-2 rounded-full hover:bg-red-50"><i class="fas fa-sign-out-alt text-xl"></i></button>
                     </div>
                 </div>
             </div>
@@ -198,14 +198,17 @@
     </div>
 
     <script>
+        // PERBAIKAN UTAMA: Ganti nama variabel 'supabase' jadi 'supabaseClient'
         const SUPABASE_URL = 'https://wxzulinfdxzybyhljjyx.supabase.co'; 
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4enVsaW5mZHh6eWJ5aGxqanl4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5MzgyNTAsImV4cCI6MjEwNTUxNDI1MH0.klh-QOhX5CBHem3-2i4LLPwxoujNkPE4kXmB8Lpnx2s';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Inisialisasi client dengan nama berbeda biar gak bentrok
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let currentUser = null, currentProfile = null, jenisSampahList = [], hargaOfftakerMap = {}; 
 
         async function initApp() {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) await handleLoginSuccess(session.user);
             else showSection('login-page');
         }
@@ -220,7 +223,7 @@
         // LOGIN
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const { data, error } = await supabase.auth.signInWithPassword({ email: document.getElementById('login-email').value, password: document.getElementById('login-password').value });
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email: document.getElementById('login-email').value, password: document.getElementById('login-password').value });
             if (error) alert('Login Gagal: ' + error.message);
             else await handleLoginSuccess(data.user);
         });
@@ -234,11 +237,11 @@
             const hp = document.getElementById('reg-hp').value;
             const alamat = document.getElementById('reg-alamat').value;
 
-            const { data, error } = await supabase.auth.signUp({ email, password });
+            const { data, error } = await supabaseClient.auth.signUp({ email, password });
             if (error) { alert('Daftar Gagal: ' + error.message); return; }
 
             // Buat profile pending
-            await supabase.from('profiles').insert({ id: data.user.id, role: 'pending', nama_lengkap: nama, no_hp: hp, alamat: alamat });
+            await supabaseClient.from('profiles').insert({ id: data.user.id, role: 'pending', nama_lengkap: nama, no_hp: hp, alamat: alamat });
             
             alert('Pendaftaran berhasil! Akun Anda sedang menunggu persetujuan Admin/Pengurus.');
             switchAuthTab('login');
@@ -247,7 +250,7 @@
 
         async function handleLoginSuccess(user) {
             currentUser = user;
-            const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+            const { data: profile } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
             
             if (!profile || profile.role === 'pending') {
                 showSection('pending-page');
@@ -265,28 +268,28 @@
             else if (profile.role === 'nasabah') await loadNasabahDashboard();
         }
 
-        async function logout() { await supabase.auth.signOut(); window.location.reload(); }
+        async function doLogout() { await supabaseClient.auth.signOut(); window.location.reload(); }
         function showSection(id) { ['login-page', 'pending-page', 'app-container'].forEach(s => { const el = document.getElementById(s); if(el) { el.classList.add('hidden-section'); el.classList.remove('active-section'); } }); const t = document.getElementById(id); if(t) { t.classList.remove('hidden-section'); t.classList.add('active-section'); } }
 
         async function loadMasterData() {
-            const { data: js } = await supabase.from('jenis_sampah').select('*').order('nama_sampah'); jenisSampahList = js || [];
-            const { data: ho } = await supabase.from('harga_offtaker').select('jenis_sampah_id, harga_per_kg').is('bank_sampah_id', null); hargaOfftakerMap = {}; (ho || []).forEach(h => hargaOfftakerMap[h.jenis_sampah_id] = h.harga_per_kg);
+            const { data: js } = await supabaseClient.from('jenis_sampah').select('*').order('nama_sampah'); jenisSampahList = js || [];
+            const { data: ho } = await supabaseClient.from('harga_offtaker').select('jenis_sampah_id, harga_per_kg').is('bank_sampah_id', null); hargaOfftakerMap = {}; (ho || []).forEach(h => hargaOfftakerMap[h.jenis_sampah_id] = h.harga_per_kg);
         }
         function formatRupiah(a) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(a); }
 
         // ADMIN LOGIC
         async function loadAdminDashboard() {
             document.getElementById('admin-dashboard').classList.remove('hidden-section');
-            const { count } = await supabase.from('bank_sampah').select('*', { count: 'exact', head: true }); document.getElementById('stat-total-bs').textContent = count || 0;
+            const { count } = await supabaseClient.from('bank_sampah').select('*', { count: 'exact', head: true }); document.getElementById('stat-total-bs').textContent = count || 0;
             loadTableBankSampah(); loadTableHargaOfftaker(); loadPendingUsersAdmin();
         }
         function switchAdminTab(t) { document.querySelectorAll('.admin-tab').forEach(b => { b.className = 'admin-tab border-transparent text-gray-500 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm'; }); event.currentTarget.className = 'admin-tab active-tab border-emerald-500 text-emerald-600 whitespace-nowrap py-3 px-1 border-b-2 font-bold text-sm'; document.querySelectorAll('.admin-content').forEach(c => c.classList.add('hidden-section')); document.getElementById(`tab-${t}`).classList.remove('hidden-section'); }
         
-        async function loadTableBankSampah() { const { data } = await supabase.from('bank_sampah').select('*').order('created_at', { ascending: false }); const tb = document.getElementById('table-bs-body'); tb.innerHTML = ''; (data||[]).forEach(r => tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${r.nama_bank}</td><td class="px-6 py-4 text-gray-600">${r.alamat||'-'}</td><td class="px-6 py-4 text-gray-600">${r.no_hp||'-'}</td></tr>`); }
-        async function loadTableHargaOfftaker() { const { data } = await supabase.from('harga_offtaker').select('*, jenis_sampah(nama_sampah)').is('bank_sampah_id', null).order('jenis_sampah(nama_sampah)'); const tb = document.getElementById('table-offtaker-body'); tb.innerHTML = ''; (data||[]).forEach(h => tb.innerHTML += `<tr><td class="px-6 py-3 font-medium">${h.jenis_sampah?.nama_sampah}</td><td class="px-6 py-3 text-emerald-700 font-bold">${formatRupiah(h.harga_per_kg)}</td></tr>`); }
+        async function loadTableBankSampah() { const { data } = await supabaseClient.from('bank_sampah').select('*').order('created_at', { ascending: false }); const tb = document.getElementById('table-bs-body'); tb.innerHTML = ''; (data||[]).forEach(r => tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${r.nama_bank}</td><td class="px-6 py-4 text-gray-600">${r.alamat||'-'}</td><td class="px-6 py-4 text-gray-600">${r.no_hp||'-'}</td></tr>`); }
+        async function loadTableHargaOfftaker() { const { data } = await supabaseClient.from('harga_offtaker').select('*, jenis_sampah(nama_sampah)').is('bank_sampah_id', null).order('jenis_sampah(nama_sampah)'); const tb = document.getElementById('table-offtaker-body'); tb.innerHTML = ''; (data||[]).forEach(h => tb.innerHTML += `<tr><td class="px-6 py-3 font-medium">${h.jenis_sampah?.nama_sampah}</td><td class="px-6 py-3 text-emerald-700 font-bold">${formatRupiah(h.harga_per_kg)}</td></tr>`); }
         
         async function loadPendingUsersAdmin() {
-            const { data } = await supabase.from('profiles').select('*, bank_sampah(nama_bank)').eq('role', 'pending');
+            const { data } = await supabaseClient.from('profiles').select('*, bank_sampah(nama_bank)').eq('role', 'pending');
             const tb = document.getElementById('table-pending-admin'); tb.innerHTML = '';
             (data||[]).forEach(u => {
                 tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${u.nama_lengkap}</td><td class="px-6 py-4 text-gray-600">${u.email || '-'}</td><td class="px-6 py-4"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-bold">Pending</span></td><td class="px-6 py-4 text-gray-600">-</td><td class="px-6 py-4"><button onclick="openApproveModal('${u.id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">Approve</button></td></tr>`;
@@ -295,7 +298,7 @@
 
         async function openApproveModal(userId) {
             document.getElementById('approve-user-id').value = userId;
-            const { data: bs } = await supabase.from('bank_sampah').select('*').order('nama_bank');
+            const { data: bs } = await supabaseClient.from('bank_sampah').select('*').order('nama_bank');
             const sel = document.getElementById('approve-bank'); sel.innerHTML = '';
             (bs||[]).forEach(b => sel.innerHTML += `<option value="${b.id}">${b.nama_bank}</option>`);
             toggleModal('modal-approve-user');
@@ -306,11 +309,11 @@
             const role = document.getElementById('approve-role').value;
             const bankId = document.getElementById('approve-bank').value;
             
-            await supabase.from('profiles').update({ role: role, bank_sampah_id: bankId }).eq('id', userId);
+            await supabaseClient.from('profiles').update({ role: role, bank_sampah_id: bankId }).eq('id', userId);
             
             // Jika nasabah, buat entry di tabel nasabah
             if (role === 'nasabah') {
-                await supabase.from('nasabah').insert({ profile_id: userId, bank_sampah_id: bankId });
+                await supabaseClient.from('nasabah').insert({ profile_id: userId, bank_sampah_id: bankId });
             }
             
             alert('User berhasil di-approve!');
@@ -321,23 +324,23 @@
         // PENGURUS LOGIC
         async function loadPengurusDashboard() {
             document.getElementById('pengurus-dashboard').classList.remove('hidden-section');
-            const { data: bs } = await supabase.from('bank_sampah').select('*').eq('id', currentProfile.bank_sampah_id).single();
+            const { data: bs } = await supabaseClient.from('bank_sampah').select('*').eq('id', currentProfile.bank_sampah_id).single();
             document.getElementById('pengurus-nama-bs').textContent = bs?.nama_bank || 'Bank Sampah Saya';
             
             // Load Pending Users untuk bank sampah ini
-            const { data: pending } = await supabase.from('profiles').select('*').eq('role', 'pending').eq('bank_sampah_id', currentProfile.bank_sampah_id);
+            const { data: pending } = await supabaseClient.from('profiles').select('*').eq('role', 'pending').eq('bank_sampah_id', currentProfile.bank_sampah_id);
             const tb = document.getElementById('table-pending-pengurus'); tb.innerHTML = '';
             (pending||[]).forEach(u => {
                 tb.innerHTML += `<tr><td class="py-3 px-4 font-medium">${u.nama_lengkap}</td><td class="py-3 px-4 text-xs text-gray-500">Menunggu</td><td class="py-3 px-4 text-right"><button onclick="approveUserByPengurus('${u.id}')" class="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700">Accept</button></td></tr>`;
             });
 
-            // Load Dropdown Nasabah & Jenis Sampah (sama seperti sebelumnya)
-            const { data: nasabah } = await supabase.from('nasabah').select('*, profiles(nama_lengkap)').eq('bank_sampah_id', currentProfile.bank_sampah_id);
+            // Load Dropdown Nasabah & Jenis Sampah
+            const { data: nasabah } = await supabaseClient.from('nasabah').select('*, profiles(nama_lengkap)').eq('bank_sampah_id', currentProfile.bank_sampah_id);
             const selN = document.getElementById('trx-nasabah'); selN.innerHTML = '<option value="">-- Pilih Nasabah --</option>';
             (nasabah||[]).forEach(n => selN.innerHTML += `<option value="${n.id}">${n.profiles?.nama_lengkap}</option>`);
 
             const selJ = document.getElementById('trx-jenis'); selJ.innerHTML = '<option value="">-- Pilih Sampah --</option>';
-            const { data: hn } = await supabase.from('harga_nasabah').select('*').eq('bank_sampah_id', currentProfile.bank_sampah_id);
+            const { data: hn } = await supabaseClient.from('harga_nasabah').select('*').eq('bank_sampah_id', currentProfile.bank_sampah_id);
             const hnm = {}; (hn||[]).forEach(h => hnm[h.jenis_sampah_id] = h);
             
             jenisSampahList.forEach(js => {
@@ -349,29 +352,28 @@
         }
 
         async function approveUserByPengurus(userId) {
-            // Pengurus hanya bisa approve jadi nasabah di bank sampah mereka
-            await supabase.from('profiles').update({ role: 'nasabah' }).eq('id', userId);
-            await supabase.from('nasabah').insert({ profile_id: userId, bank_sampah_id: currentProfile.bank_sampah_id });
+            await supabaseClient.from('profiles').update({ role: 'nasabah' }).eq('id', userId);
+            await supabaseClient.from('nasabah').insert({ profile_id: userId, bank_sampah_id: currentProfile.bank_sampah_id });
             alert('Nasabah berhasil di-accept!');
             loadPengurusDashboard();
         }
 
         function updateTrxPreview() { const s=document.getElementById('trx-jenis'); const b=parseFloat(document.getElementById('trx-berat').value)||0; const o=s.options[s.selectedIndex]; if(o&&o.value){document.getElementById('trx-preview-total').textContent=formatRupiah((parseFloat(o.dataset.harga)||0)*b);}else{document.getElementById('trx-preview-total').textContent='Rp 0';} }
-        document.getElementById('form-transaksi').addEventListener('submit', async(e)=>{e.preventDefault(); const ni=document.getElementById('trx-nasabah').value; const ji=document.getElementById('trx-jenis').value; const b=parseFloat(document.getElementById('trx-berat').value); if(!ni||!ji||!b){alert('Lengkapi data!');return;} const s=document.getElementById('trx-jenis'); const h=parseFloat(s.options[s.selectedIndex].dataset.harga); const t=h*b; const {error}=await supabase.from('transaksi').insert({bank_sampah_id:currentProfile.bank_sampah_id,nasabah_id:ni,jenis_sampah_id:ji,berat_kg:b,harga_saat_transaksi:h,total_harga:t,kategori_transaksi:document.getElementById('trx-kategori').value,status_bayar:document.getElementById('trx-status').value}); if(error)alert('Gagal: '+error.message); else{alert('Berhasil!');e.target.reset();document.getElementById('trx-preview-total').textContent='Rp 0';}});
+        document.getElementById('form-transaksi').addEventListener('submit', async(e)=>{e.preventDefault(); const ni=document.getElementById('trx-nasabah').value; const ji=document.getElementById('trx-jenis').value; const b=parseFloat(document.getElementById('trx-berat').value); if(!ni||!ji||!b){alert('Lengkapi data!');return;} const s=document.getElementById('trx-jenis'); const h=parseFloat(s.options[s.selectedIndex].dataset.harga); const t=h*b; const {error}=await supabaseClient.from('transaksi').insert({bank_sampah_id:currentProfile.bank_sampah_id,nasabah_id:ni,jenis_sampah_id:ji,berat_kg:b,harga_saat_transaksi:h,total_harga:t,kategori_transaksi:document.getElementById('trx-kategori').value,status_bayar:document.getElementById('trx-status').value}); if(error)alert('Gagal: '+error.message); else{alert('Berhasil!');e.target.reset();document.getElementById('trx-preview-total').textContent='Rp 0';}});
 
         // NASABAH LOGIC
         async function loadNasabahDashboard() {
             document.getElementById('nasabah-dashboard').classList.remove('hidden-section');
-            const { data: nData } = await supabase.from('nasabah').select('*').eq('profile_id', currentProfile.id).single();
+            const { data: nData } = await supabaseClient.from('nasabah').select('*').eq('profile_id', currentProfile.id).single();
             if(nData){document.getElementById('nasabah-nama').textContent=currentProfile.nama_lengkap;document.getElementById('nasabah-saldo-tabung').textContent=formatRupiah(nData.saldo_tabungan||0);}
-            const { data: trx } = await supabase.from('transaksi').select('*, jenis_sampah(nama_sampah, satuan)').eq('nasabah_id', nData?.id).order('tanggal_transaksi',{ascending:false});
+            const { data: trx } = await supabaseClient.from('transaksi').select('*, jenis_sampah(nama_sampah, satuan)').eq('nasabah_id', nData?.id).order('tanggal_transaksi',{ascending:false});
             const lc=document.getElementById('nasabah-riwayat-list'); lc.innerHTML=''; let tb=0;
             (trx||[]).forEach(t=>{tb+=t.berat_kg; lc.innerHTML+=`<div class="flex justify-between items-center p-4 bg-white rounded-xl border border-gray-100 shadow-sm"><div><p class="font-bold text-gray-900">${t.jenis_sampah?.nama_sampah}</p><p class="text-xs text-gray-500">${new Date(t.tanggal_transaksi).toLocaleDateString('id-ID')} • ${t.berat_kg} ${t.jenis_sampah?.satuan}</p></div><div class="text-right"><p class="font-bold text-emerald-700">${formatRupiah(t.total_harga)}</p><span class="text-[10px] px-2 py-0.5 rounded-full ${t.status_bayar==='dibayar'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}">${t.status_bayar==='dibayar'?'Dibayar':'Ditabung'}</span></div></div>`;});
             document.getElementById('nasabah-total-setor').textContent=tb.toFixed(1)+' Kg';
         }
 
         // UTILS
-        async function handleImportOfftaker(input){const f=input.files[0];if(!f)return;const t=await f.text();const l=t.split('\n').slice(1);let c=0;for(let ln of l){const[n,h]=ln.split(',');if(n&&h){const hv=parseFloat(h.replace(/[^0-9.-]+/g,""));const j=jenisSampahList.find(x=>x.nama_sampah.toLowerCase().includes(n.trim().toLowerCase()));if(j&&!isNaN(hv)){await supabase.from('harga_offtaker').upsert({jenis_sampah_id:j.id,bank_sampah_id:null,harga_per_kg:hv},{onConflict:'jenis_sampah_id, bank_sampah_id'});c++;}}}alert(`Import ${c} data sukses!`);loadTableHargaOfftaker();input.value='';}
+        async function handleImportOfftaker(input){const f=input.files[0];if(!f)return;const t=await f.text();const l=t.split('\n').slice(1);let c=0;for(let ln of l){const[n,h]=ln.split(',');if(n&&h){const hv=parseFloat(h.replace(/[^0-9.-]+/g,""));const j=jenisSampahList.find(x=>x.nama_sampah.toLowerCase().includes(n.trim().toLowerCase()));if(j&&!isNaN(hv)){await supabaseClient.from('harga_offtaker').upsert({jenis_sampah_id:j.id,bank_sampah_id:null,harga_per_kg:hv},{onConflict:'jenis_sampah_id, bank_sampah_id'});c++;}}}alert(`Import ${c} data sukses!`);loadTableHargaOfftaker();input.value='';}
         function exportOfftakerCSV(){let c='Nama Sampah,Harga Per Kg\n';jenisSampahList.forEach(j=>{c+=`"${j.nama_sampah}",${hargaOfftakerMap[j.id]||0}\n`;});const b=new Blob([c],{type:'text/csv'});const u=window.URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='harga_offtaker_rajin.csv';a.click();}
         function toggleModal(id){document.getElementById(id).classList.toggle('hidden-section');}
         function toggleChat(){document.getElementById('chat-window').classList.toggle('hidden-section');}
