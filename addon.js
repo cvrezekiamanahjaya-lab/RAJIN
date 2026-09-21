@@ -1,3 +1,111 @@
+// KONFIGURASI SUPABASE
+const SUPABASE_URL = 'https://woqifznkmbsjxelzhmjk.supabase.co'; 
+const SUPABASE_ANON_KEY = 'sb_publishable_3iBnO0BYibh8Y8WJwXI0hg_X3iho_pj'; 
+
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let currentUser = null, currentProfile = null, jenisSampahList = [], hargaOfftakerMap = {}; 
+
+// --- INITIALIZATION ---
+async function initApp() {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) await handleLoginSuccess(session.user);
+    else showSection('login-page');
+}
+
+function switchAuthTab(tab) {
+    document.getElementById('login-form').classList.toggle('hidden-section', tab !== 'login');
+    document.getElementById('register-form').classList.toggle('hidden-section', tab !== 'register');
+    document.getElementById('tab-login').className = tab === 'login' ? 'flex-1 py-2 text-sm font-bold text-emerald-600 border-b-2 border-emerald-600 transition' : 'flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition';
+    document.getElementById('tab-register').className = tab === 'register' ? 'flex-1 py-2 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition' : 'flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition';
+}
+
+// --- AUTHENTICATION HANDLERS ---
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Memproses...';
+    btn.disabled = true;
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email: document.getElementById('login-email').value, password: document.getElementById('login-password').value });
+    btn.innerHTML = originalText; btn.disabled = false;
+    if (error) alert('Login Gagal: ' + error.message);
+    else await handleLoginSuccess(data.user);
+});
+
+document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('reg-email').value;
+    const password = document.getElementById('reg-password').value;
+    const nama = document.getElementById('reg-nama').value;
+    const hp = document.getElementById('reg-hp').value;
+    const alamat = document.getElementById('reg-alamat').value;
+
+    const btn = e.target.querySelector('button');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Mendaftar...';
+    btn.disabled = true;
+
+    try {
+        const { data: authData, error: authError } = await supabaseClient.auth.signUp({ email, password, options: { data: { nama_lengkap: nama, no_hp: hp, alamat: alamat } } });
+        if (authError) {
+            if (authError.message.toLowerCase().includes('already registered') || authError.message.toLowerCase().includes('duplicate')) {
+                sessionStorage.setItem('reg_data', JSON.stringify({ email, password, nama, hp, alamat }));
+                document.getElementById('modal-confirm-overwrite').classList.remove('hidden-section');
+                document.getElementById('modal-confirm-overwrite').classList.add('active-section');
+                document.getElementById('btn-confirm-overwrite').onclick = async () => await handleOverwriteUser(email, password, nama, hp, alamat);
+            } else { alert('Gagal mendaftar: ' + authError.message); }
+        } else {
+            alert('Pendaftaran berhasil! Akun Anda berstatus Pending.');
+            switchAuthTab('login'); e.target.reset();
+        }
+    } catch (err) { alert('Terjadi kesalahan: ' + err.message); }
+    finally { btn.innerHTML = originalText; btn.disabled = false; }
+});
+
+async function handleOverwriteUser(email, password, nama, hp, alamat) {
+    try {
+        const { data: loginData, error: loginError } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (loginError) throw loginError;
+        const { error: profileError } = await supabaseClient.from('profiles').upsert({ id: loginData.user.id, role: 'pending', status: 'active', nama_lengkap: nama, no_hp: hp, alamat: alamat, bank_sampah_id: null }, { onConflict: 'id' });
+        if (profileError) throw profileError;
+        closeOverwriteModal();
+        alert('Data berhasil diperbarui! Akun kembali ke status Pending.');
+        switchAuthTab('login'); document.getElementById('register-form').reset();
+    } catch (err) { alert('Gagal menimpa data: ' + err.message); }
+}
+
+function closeOverwriteModal() {
+    document.getElementById('modal-confirm-overwrite').classList.add('hidden-section');
+    document.getElementById('modal-confirm-overwrite').classList.remove('active-section');
+    sessionStorage.removeItem('reg_data');
+}
+
+async function handleLoginSuccess(user) {
+    currentUser = user;
+    const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
+    if (error || !profile) { alert('Error mengambil data profil.'); await doLogout(); return; }
+    if (profile.role === 'pending') { showSection('pending-page'); return; }
+    
+    currentProfile = profile;
+    document.getElementById('user-name').textContent = profile.nama_lengkap;
+    document.getElementById('user-role').textContent = profile.role;
+    await loadMasterData();
+    showSection('app-container');
+    
+    if (profile.role === 'admin') await loadAdminDashboard();
+    else if (profile.role === 'pengurus') await loadPengurusDashboard();
+    else if (profile.role === 'nasabah') await loadNasabahDashboard();
+}
+
+async function doLogout() { await supabaseClient.auth.signOut(); window.location.reload(); }
+function showSection(id) { ['login-page', 'pending-page', 'app-container'].forEach(s => { const el = document.getElementById(s); if(el) { el.classList.add('hidden-section'); el.classList.remove('active-section'); } });Ide bagus banget ges! Memecah kode jadi beberapa file (`index.html`, `addon.js`, `style.css`) itu **praktik terbaik (best practice)**. Ini bikin kode lebih rapi, gampang dicari errornya, dan kalau ada perubahan kecil kita nggak perlu scroll ribuan baris HTML.
+
+Berikut struktur folder dan kodenya. Silakan buat 3 file ini di folder project kamu:
+
+### 1. `index.html` (Hanya Struktur Tampilan)
+File ini isinya murni HTML & layout. Bersih dari logika JavaScript yang panjang.
+
+```html
 <!DOCTYPE html>
 <html lang="id">
 <head>
