@@ -131,9 +131,9 @@ function closeOverwriteModal() {
     sessionStorage.removeItem('reg_data');
 }
 
+// --- FIX UTAMA: HANDLE LOGIN SUCCESS DENGAN DOUBLE CHECK MASTER DATA ---
 async function handleLoginSuccess(user) {
     currentUser = user;
-    // FIX: Select * saja, jangan select email karena tidak ada di profiles
     const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
     if (error || !profile) { alert('Error mengambil data profil.'); await doLogout(); return; }
     if (profile.role === 'pending') { showSection('pending-page'); return; }
@@ -142,14 +142,29 @@ async function handleLoginSuccess(user) {
     document.getElementById('user-name').textContent = profile.nama_lengkap;
     document.getElementById('user-role').textContent = profile.role;
     
-    // WAJIB LOAD MASTER DATA DULU SEBELUM BUKA DASHBOARD
+    // WAJIB: Load master data DULU dan tunggu sampai selesai
     await loadMasterData();
     
+    // Tampilkan container aplikasi
     showSection('app-container');
     
-    if (profile.role === 'admin') await loadAdminDashboard();
-    else if (profile.role === 'pengurus') await loadPengurusDashboard(); // Dipanggil dari pengurus.js
-    else if (profile.role === 'nasabah') await loadNasabahDashboard();
+    // LOGIC KHUSUS PENGURUS: Pastikan data master benar-benar siap
+    if (profile.role === 'pengurus') {
+        if(jenisSampahList.length > 0 && Object.keys(hargaOfftakerMap).length > 0) {
+            await loadPengurusDashboard();
+        } else {
+            // Kalau masih kosong (jarang terjadi), coba load lagi sekali
+            console.warn("Master data belum siap, mencoba reload...");
+            await loadMasterData();
+            await loadPengurusDashboard();
+        }
+    } 
+    else if (profile.role === 'admin') {
+        await loadAdminDashboard();
+    }
+    else if (profile.role === 'nasabah') {
+        await loadNasabahDashboard();
+    }
 }
 
 async function doLogout() { 
