@@ -111,7 +111,7 @@ async function loadAdminDashboard() {
     document.getElementById('admin-dashboard').classList.remove('hidden-section');
     const { count } = await supabaseClient.from('bank_sampah').select('*', { count: 'exact', head: true }); document.getElementById('stat-total-bs').textContent = count || 0;
     loadTableBankSampah(); loadTableHargaOfftaker(); loadPendingUsersAdmin(); loadActiveUsersAdmin();
-    loadPduData(); 
+    loadPduData(); // Load data dropdown PDU saat dashboard admin dibuka
 }
 
 function switchAdminTab(t) { 
@@ -260,101 +260,93 @@ document.getElementById('form-create-user').addEventListener('submit', async (e)
     }
 });
 
-// --- FUNGSI LOAD DATA UNTUK TAB PDU ---
+// --- FUNGSI LOAD DATA UNTUK TAB PDU (DISESUAIKAN) ---
 async function loadPduData() {
     const { data: bs } = await supabaseClient.from('bank_sampah').select('*').order('nama_bank');
-    const selBs1 = document.getElementById('pdu-bs-select');
-    const selBs2 = document.getElementById('kirim-bs-select');
-    if(selBs1) {
-        selBs1.innerHTML = '<option value="">-- Pilih Bank Sampah --</option>';
-        selBs2.innerHTML = '<option value="">-- Pilih Bank Sampah --</option>';
-        (bs||[]).forEach(b => {
-            selBs1.innerHTML += `<option value="${b.id}">${b.nama_bank}</option>`;
-            selBs2.innerHTML += `<option value="${b.id}">${b.nama_bank}</option>`;
-        });
+    
+    // Dropdown untuk Pembelian dari Bank Sampah
+    const selBsBeli = document.getElementById('beli-bs-select'); 
+    if(selBsBeli) {
+        selBsBeli.innerHTML = '<option value="">-- Pilih Bank Sampah --</option>';
+        (bs||[]).forEach(b => selBsBeli.innerHTML += `<option value="${b.id}">${b.nama_bank}</option>`);
     }
 
-    const selJenis = document.getElementById('kirim-jenis-select');
-    if(selJenis) {
-        selJenis.innerHTML = '<option value="">-- Pilih Jenis Sampah --</option>';
+    // Dropdown untuk Penjualan ke PDU (Tidak perlu pilih Bank Sampah sesuai request)
+    // Tapi kita butuh dropdown Jenis Sampah
+    const selJenisJual = document.getElementById('jual-jenis-select');
+    if(selJenisJual) {
+        selJenisJual.innerHTML = '<option value="">-- Pilih Jenis Sampah --</option>';
         jenisSampahList.forEach(js => {
-            selJenis.innerHTML += `<option value="${js.id}" data-harga="${hargaOfftakerMap[js.id] || 0}">${js.nama_sampah}</option>`;
+            selJenisJual.innerHTML += `<option value="${js.id}" data-harga="${hargaOfftakerMap[js.id] || 0}">${js.nama_sampah}</option>`;
         });
         
-        selJenis.addEventListener('change', function() {
+        // Auto-fill harga saat jenis sampah dipilih
+        selJenisJual.addEventListener('change', function() {
             const opt = this.options[this.selectedIndex];
-            document.getElementById('kirim-harga').value = opt.dataset.harga || '';
+            document.getElementById('jual-harga').value = opt.dataset.harga || '';
+        });
+    }
+
+    // Dropdown Jenis Sampah untuk Pembelian
+    const selJenisBeli = document.getElementById('beli-jenis-select');
+    if(selJenisBeli) {
+        selJenisBeli.innerHTML = '<option value="">-- Pilih Jenis Sampah --</option>';
+        jenisSampahList.forEach(js => {
+            selJenisBeli.innerHTML += `<option value="${js.id}" data-harga="${hargaOfftakerMap[js.id] || 0}">${js.nama_sampah}</option>`;
+        });
+        
+        selJenisBeli.addEventListener('change', function() {
+            const opt = this.options[this.selectedIndex];
+            document.getElementById('beli-harga').value = opt.dataset.harga || '';
         });
     }
 }
 
-async function loadNasabahForAdmin() {
-    const bsId = document.getElementById('pdu-bs-select').value;
-    const selNasabah = document.getElementById('pdu-nasabah-select');
-    selNasabah.innerHTML = '<option value="">-- Pilih Nasabah --</option>';
-    document.getElementById('pdu-saldo-display').textContent = 'Rp 0';
-    
-    if (!bsId) return;
-
-    const { data } = await supabaseClient.from('nasabah').select('*, profiles(nama_lengkap)').eq('bank_sampah_id', bsId);
-    (data||[]).forEach(n => {
-        selNasabah.innerHTML += `<option value="${n.id}" data-saldo="${n.saldo_tabungan || 0}">${n.profiles?.nama_lengkap}</option>`;
-    });
-}
-
-function checkSaldoNasabah() {
-    const sel = document.getElementById('pdu-nasabah-select');
-    const opt = sel.options[sel.selectedIndex];
-    const saldo = opt ? parseFloat(opt.dataset.saldo) || 0 : 0;
-    document.getElementById('pdu-saldo-display').textContent = formatRupiah(saldo);
-}
-
-// --- HANDLE FORM PENGAMBILAN SALDO (ADMIN) ---
-document.getElementById('admin-form-penarikan')?.addEventListener('submit', async (e) => {
+// --- HANDLE FORM PEMBELIAN DARI BANK SAMPAH ---
+document.getElementById('admin-form-beli')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const nasabahId = document.getElementById('pdu-nasabah-select').value;
-    const nominal = parseFloat(document.getElementById('pdu-nominal').value);
-    
-    if (!nasabahId || !nominal || nominal <= 0) { alert('Lengkapi data penarikan!'); return; }
-    
-    const { data: nData } = await supabaseClient.from('nasabah').select('saldo_tabungan, bank_sampah_id, profile_id').eq('id', nasabahId).single();
-    if (!nData || nData.saldo_tabungan < nominal) { 
-        alert(`Saldo tidak cukup! Saldo tersedia: ${formatRupiah(nData?.saldo_tabungan || 0)}`); 
-        return; 
-    }
+    const bsId = document.getElementById('beli-bs-select').value;
+    const jsId = document.getElementById('beli-jenis-select').value;
+    const berat = parseFloat(document.getElementById('beli-berat').value);
+    const harga = parseFloat(document.getElementById('beli-harga').value);
 
-    await supabaseClient.from('nasabah').update({ saldo_tabungan: nData.saldo_tabungan - nominal }).eq('id', nasabahId);
+    if (!bsId || !jsId || !berat || !harga) { alert('Lengkapi data pembelian!'); return; }
 
-    await supabaseClient.from('transaksi').insert({
-        bank_sampah_id: nData.bank_sampah_id,
-        nasabah_id: nasabahId,
-        jenis_sampah_id: null,
-        berat_kg: 0,
-        harga_saat_transaksi: 0,
-        total_harga: nominal,
-        kategori_transaksi: 'penarikan',
+    // Simpan sebagai transaksi pembelian (kategori: beli)
+    // Karena ini Admin beli dari Bank Sampah, kita anggap ini stok masuk ke Admin
+    const { error } = await supabaseClient.from('transaksi').insert({
+        bank_sampah_id: bsId, // Dari bank sampah mana
+        nasabah_id: null, // Bukan transaksi nasabah
+        jenis_sampah_id: jsId,
+        berat_kg: berat,
+        harga_saat_transaksi: harga,
+        total_harga: berat * harga,
+        kategori_transaksi: 'beli', // Kategori pembelian
         status_bayar: 'dibayar',
         tanggal_transaksi: new Date().toISOString()
     });
 
-    alert('Pengambilan saldo berhasil dicatat!');
-    e.target.reset();
-    document.getElementById('pdu-saldo-display').textContent = 'Rp 0';
+    if (error) {
+        alert('Gagal mencatat pembelian: ' + error.message);
+    } else {
+        alert('Pembelian dari Bank Sampah berhasil dicatat!');
+        e.target.reset();
+    }
 });
 
-// --- HANDLE FORM PENGIRIMAN KE PDU ---
-document.getElementById('admin-form-kirim-pdu')?.addEventListener('submit', async (e) => {
+// --- HANDLE FORM PENJUALAN KE PDU ---
+document.getElementById('admin-form-jual')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const bsId = document.getElementById('kirim-bs-select').value;
-    const jsId = document.getElementById('kirim-jenis-select').value;
-    const berat = parseFloat(document.getElementById('kirim-berat').value);
-    const harga = parseFloat(document.getElementById('kirim-harga').value);
-    const pembeli = document.getElementById('kirim-pembeli').value;
+    const jsId = document.getElementById('jual-jenis-select').value;
+    const berat = parseFloat(document.getElementById('jual-berat').value);
+    const harga = parseFloat(document.getElementById('jual-harga').value);
+    const pembeli = document.getElementById('jual-pembeli').value;
 
-    if (!bsId || !jsId || !berat || !harga) { alert('Lengkapi data pengiriman!'); return; }
+    if (!jsId || !berat || !harga) { alert('Lengkapi data penjualan!'); return; }
 
+    // Simpan ke tabel penjualan
     const { error } = await supabaseClient.from('penjualan').insert({
-        bank_sampah_id: bsId,
+        bank_sampah_id: null, // Tidak terikat bank sampah spesifik (Admin pusat)
         jenis_sampah_id: jsId,
         berat_kg: berat,
         harga_jual_per_kg: harga,
@@ -364,19 +356,21 @@ document.getElementById('admin-form-kirim-pdu')?.addEventListener('submit', asyn
     });
 
     if (error) {
+        // Fallback jika tabel penjualan belum ada
         await supabaseClient.from('transaksi').insert({
-            bank_sampah_id: bsId,
+            bank_sampah_id: null,
             nasabah_id: null,
             jenis_sampah_id: jsId,
             berat_kg: berat,
             harga_saat_transaksi: harga,
             total_harga: berat * harga,
-            kategori_transaksi: 'beli',
-            status_bayar: 'dibayar'
+            kategori_transaksi: 'jual_pdu', // Kategori khusus
+            status_bayar: 'dibayar',
+            tanggal_transaksi: new Date().toISOString()
         });
     }
 
-    alert('Pengiriman ke PDU berhasil dicatat!');
+    alert('Penjualan ke PDU berhasil dicatat!');
     e.target.reset();
 });
 
