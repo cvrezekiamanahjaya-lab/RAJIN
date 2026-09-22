@@ -5,11 +5,64 @@ const SUPABASE_ANON_KEY = 'sb_publishable_3iBnO0BYibh8Y8WJwXI0hg_X3iho_pj';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUser = null, currentProfile = null, jenisSampahList = [], hargaOfftakerMap = {}; 
 
+// --- FUNGSI MANAJEMEN STATE HALAMAN (AUTO REFRESH) ---
+
+// Simpan ID section terakhir yang aktif ke sessionStorage
+function saveCurrentSection(sectionId) {
+    if (sectionId && sectionId !== 'login-page' && sectionId !== 'pending-page') {
+        sessionStorage.setItem('last_active_section', sectionId);
+        
+        // Jika yang disimpan adalah dashboard admin, simpan juga tab terakhir
+        if (sectionId === 'admin-dashboard') {
+            const activeTab = document.querySelector('.admin-tab.active-tab');
+            if (activeTab) {
+                const tabName = activeTab.getAttribute('onclick').match(/'([^']+)'/)[1];
+                sessionStorage.setItem('last_admin_tab', tabName);
+            }
+        }
+    } else {
+        sessionStorage.removeItem('last_active_section');
+        sessionStorage.removeItem('last_admin_tab');
+    }
+}
+
+// Restore halaman & tab terakhir saat initApp dipanggil
+async function restoreLastSection() {
+    const lastSection = sessionStorage.getItem('last_active_section');
+    
+    if (lastSection && document.getElementById(lastSection)) {
+        showSection(lastSection);
+        
+        if (lastSection === 'admin-dashboard') {
+            const lastTab = sessionStorage.getItem('last_admin_tab');
+            if (lastTab) {
+                const tabBtn = document.querySelector(`button[onclick="switchAdminTab('${lastTab}')"]`);
+                if (tabBtn) tabBtn.click();
+            }
+        }
+        return true; 
+    }
+    return false; 
+}
+
 // --- INITIALIZATION ---
 async function initApp() {
     const { data: { session } } = await supabaseClient.auth.getSession();
-    if (session) await handleLoginSuccess(session.user);
-    else showSection('login-page');
+    
+    if (session) {
+        await handleLoginSuccess(session.user);
+        
+        // COBA RESTORE HALAMAN TERAKHIR SETELAH LOGIN SUKSES
+        const restored = await restoreLastSection();
+        if (!restored) {
+            // Jika tidak ada state tersimpan, tampilkan dashboard default berdasarkan role
+            if (currentProfile.role === 'admin') showSection('admin-dashboard');
+            else if (currentProfile.role === 'pengurus') showSection('pengurus-dashboard');
+            else if (currentProfile.role === 'nasabah') showSection('nasabah-dashboard');
+        }
+    } else {
+        showSection('login-page');
+    }
 }
 
 function switchAuthTab(tab) {
@@ -97,8 +150,30 @@ async function handleLoginSuccess(user) {
     else if (profile.role === 'nasabah') await loadNasabahDashboard();
 }
 
-async function doLogout() { await supabaseClient.auth.signOut(); window.location.reload(); }
-function showSection(id) { ['login-page', 'pending-page', 'app-container'].forEach(s => { const el = document.getElementById(s); if(el) { el.classList.add('hidden-section'); el.classList.remove('active-section'); } }); const t = document.getElementById(id); if(t) { t.classList.remove('hidden-section'); t.classList.add('active-section'); } }
+async function doLogout() { 
+    await supabaseClient.auth.signOut(); 
+    sessionStorage.removeItem('last_active_section');
+    sessionStorage.removeItem('last_admin_tab');
+    window.location.reload(); 
+}
+
+// MODIFIKASI FUNGSI showSection AGAR OTOMATIS MENYIMPAN STATE
+function showSection(id) { 
+    ['login-page', 'pending-page', 'app-container'].forEach(s => { 
+        const el = document.getElementById(s); 
+        if(el) { 
+            el.classList.add('hidden-section'); 
+            el.classList.remove('active-section'); 
+        } 
+    }); 
+    
+    const t = document.getElementById(id); 
+    if(t) { 
+        t.classList.remove('hidden-section'); 
+        t.classList.add('active-section'); 
+        saveCurrentSection(id); // SIMPAN STATE SETIAP KALI PINDAH HALAMAN
+    } 
+}
 
 async function loadMasterData() {
     const { data: js } = await supabaseClient.from('jenis_sampah').select('*').order('nama_sampah'); jenisSampahList = js || [];
@@ -114,12 +189,14 @@ async function loadAdminDashboard() {
     loadPduData(); 
 }
 
+// MODIFIKASI switchAdminTab AGAR MENYIMPAN TAB TERAKHIR
 function switchAdminTab(t) { 
     document.querySelectorAll('.admin-tab').forEach(b => { b.className = 'admin-tab border-transparent text-gray-500 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm'; }); 
     event.currentTarget.className = 'admin-tab active-tab border-emerald-500 text-emerald-600 whitespace-nowrap py-3 px-1 border-b-2 font-bold text-sm'; 
     document.querySelectorAll('.admin-content').forEach(c => c.classList.add('hidden-section')); 
     document.getElementById(`tab-${t}`).classList.remove('hidden-section'); 
-}
+    sessionStorage.setItem('last_admin_tab', t); // SIMPAN TAB ADMIN
+} 
 
 async function loadTableBankSampah() { const { data } = await supabaseClient.from('bank_sampah').select('*').order('created_at', { ascending: false }); const tb = document.getElementById('table-bs-body'); tb.innerHTML = ''; (data||[]).forEach(r => tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${r.nama_bank}</td><td class="px-6 py-4 text-gray-600">${r.alamat||'-'}</td><td class="px-6 py-4 text-gray-600">${r.no_hp||'-'}</td></tr>`); }
 
@@ -191,7 +268,6 @@ async function submitApproveUser() {
     const role = document.getElementById('approve-role').value;
     const bankId = document.getElementById('approve-bank').value;
     
-    // Gunakan fungsi dari account-manager.js
     const result = await approveUserAccount(userId, role, bankId);
     
     if(result.success) {
@@ -219,7 +295,6 @@ document.getElementById('form-create-user').addEventListener('submit', async (e)
         const role = document.getElementById('new-user-role').value;
         const bankId = document.getElementById('new-user-bs').value || null;
 
-        // Panggil fungsi createManualAccount dari account-manager.js
         const result = await createManualAccount(email, password, nama, role, bankId);
 
         if (result.success) {
@@ -229,7 +304,7 @@ document.getElementById('form-create-user').addEventListener('submit', async (e)
             loadPendingUsersAdmin(); 
             loadActiveUsersAdmin();
         } else {
-            alert(' Gagal membuat akun: ' + result.message);
+            alert('❌ Gagal membuat akun: ' + result.message);
         }
         
     } catch (err) {
@@ -332,15 +407,15 @@ document.getElementById('admin-form-jual')?.addEventListener('submit', async (e)
 async function resetPasswordAdmin(userId, email) {
     const newPass = prompt(`Masukkan password baru untuk user ${email}:`, "Rajin123!");
     if (!newPass) return;
-    const sqlScript = getResetPasswordSQL(userId, newPass); // Pakai fungsi dari account-manager.js
-    alert(`⚠️ INSTRUKSI RESET PASSWORD MANUAL\n\nCopy script ini ke SQL Editor Supabase:\n\n${sqlScript}\n\nSetelah dijalankan, user bisa login dengan password baru.`);
+    const sqlScript = getResetPasswordSQL(userId, newPass);
+    alert(`️ INSTRUKSI RESET PASSWORD MANUAL\n\nCopy script ini ke SQL Editor Supabase:\n\n${sqlScript}\n\nSetelah dijalankan, user bisa login dengan password baru.`);
 }
 
 async function editUserRole(userId) {
     const newRole = prompt("Ubah role user (admin/pengurus/nasabah):");
     if (!newRole || !['admin', 'pengurus', 'nasabah'].includes(newRole.toLowerCase())) { alert("Role tidak valid!"); return; }
     
-    const result = await updateUserRole(userId, newRole.toLowerCase()); // Pakai fungsi dari account-manager.js
+    const result = await updateUserRole(userId, newRole.toLowerCase());
     if(result.success) { alert("Role berhasil diubah!"); loadActiveUsersAdmin(); }
     else { alert("Gagal ubah role: " + result.message); }
 }
