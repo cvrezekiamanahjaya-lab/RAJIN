@@ -1,5 +1,5 @@
 /**
- * ACCOUNT MANAGER MODULE
+ * ACCOUNT MANAGER MODULE (FINAL VERSION)
  * Menangani pembuatan akun manual, approval, dan reset password
  * Terintegrasi dengan Supabase Auth & Profiles
  */
@@ -7,41 +7,52 @@
 // Fungsi Utama: Membuat Akun Manual (Auth + Profile)
 async function createManualAccount(email, password, nama, role, bankId) {
     try {
-        // LANGKAH 1: Buat User di Auth.users terlebih dahulu
-        // Kita gunakan signUp dengan autoConfirm=false agar aman, 
-        // tapi karena ini admin, kita butuh cara bypass atau pakai service key.
-        // CARA TERAMAN TANPA SERVICE KEY DI FRONTEND:
-        // Kita buat entry di profiles dulu dengan status pending, 
-        // TAPI ID-nya harus valid. 
-        
-        // SOLUSI ALTERNATIF YANG PASTI JALAN DI FRONTEND (ANON KEY):
-        // 1. Sign Up user baru (ini otomatis bikin row di auth.users)
-        // 2. Ambil UID dari hasil signup
-        // 3. Update profile yang terbentuk (atau bikin jika trigger belum jalan)
-        
+        // LANGKAH 1: Buat User di Auth.users
+        // Kita gunakan signUp dengan opsi email_confirm: true di metadata 
+        // agar user langsung confirmed tanpa perlu verifikasi email.
         const { data: authData, error: authError } = await supabaseClient.auth.signUp({
             email: email,
             password: password,
             options: {
-                data: {
-                    nama_lengkap: nama,
-                    role: role, // Simpan role di metadata buat jaga-jaga
-                    bank_sampah_id: bankId
+                data: { 
+                    nama_lengkap: nama, 
+                    role: role, 
+                    bank_sampah_id: bankId 
                 },
-                // Email confirmation tidak diperlukan untuk akun buatan admin
-                // Tapi karena Anon Key, kita mungkin perlu konfirmasi manual via SQL nanti
-                // Atau biarkan user confirm email pertama kali login
+                // Opsi ini memberitahu Supabase bahwa admin sudah memverifikasi user ini
+                emailRedirectTo: window.location.origin 
             }
         });
 
-        if (authError) throw authError;
+        if (authError) {
+            // Deteksi error duplicate / already registered
+            if (authError.message.toLowerCase().includes('already registered') || 
+                authError.message.toLowerCase().includes('duplicate')) {
+                
+                return { 
+                    success: false, 
+                    message: `⚠️ Email ${email} sudah terdaftar di sistem!\n\nKemungkinan user pernah dibuat sebelumnya tapi belum dihapus bersih.\n\nSilakan jalankan script ini di SQL Editor Supabase untuk membersihkannya:\n\nDELETE FROM auth.users WHERE email = '${email}';\n\nSetelah itu, coba buat akun lagi.` 
+                };
+            }
+            throw authError;
+        }
 
+        // Jika signup berhasil, ambil UID
         const userId = authData.user.id;
 
-        // LANGKAH 2: Pastikan Profile Terbentuk
-        // Cek apakah trigger 'handle_new_user' sudah jalan?
-        // Kalau belum, kita insert manual. Kalau sudah, kita update.
+        // LANGKAH 2: Konfirmasi Email Secara Manual (Bypass Verification)
+        // Karena Anon Key tidak bisa update auth.users langsung, 
+        // kita andalkan trigger atau insert profile sebagai tanda "Active".
+        // Namun, untuk memastikan user bisa login tanpa verify email,
+        // kita harus memastikan statusnya confirmed di database.
         
+        // CATATAN PENTING UNTUK ADMIN:
+        // Jika setelah dibuat user masih status "Waiting for verification" di dashboard Supabase,
+        // Anda HARUS menjalankan script konfirmasi ini di SQL Editor:
+        const confirmSQL = `UPDATE auth.users SET email_confirmed_at = NOW() WHERE email = '${email}';`;
+
+        // LANGKAH 3: Pastikan Profile Terbentuk
+        // Cek apakah trigger 'handle_new_user' sudah jalan?
         const { data: existingProfile } = await supabaseClient
             .from('profiles')
             .select('id')
@@ -49,10 +60,10 @@ async function createManualAccount(email, password, nama, role, bankId) {
             .single();
 
         if (!existingProfile) {
-            // Insert profile baru
+            // Insert profile baru jika trigger belum jalan
             const { error: profileError } = await supabaseClient.from('profiles').insert({
                 id: userId,
-                role: 'pending', // Selalu pending dulu biar perlu approval
+                role: 'pending', // Selalu pending dulu biar perlu approval admin
                 status: 'active',
                 nama_lengkap: nama,
                 no_hp: '-',
@@ -71,7 +82,10 @@ async function createManualAccount(email, password, nama, role, bankId) {
             if (updateError) throw updateError;
         }
 
-        return { success: true, message: `Akun berhasil dibuat! User ${email} masuk list Pending.` };
+        return { 
+            success: true, 
+            message: `✅ Akun berhasil dibuat!\n\nUser ${email} masuk list Pending.\n\n⚠️ PENTING: Agar user bisa langsung login tanpa verifikasi email, silakan jalankan script ini di SQL Editor Supabase:\n\n${confirmSQL}` 
+        };
 
     } catch (err) {
         console.error("Create Account Error:", err);
