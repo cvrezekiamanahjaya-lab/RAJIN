@@ -1,11 +1,11 @@
 /**
- * PENGURUS MODULE - FINAL VERSION
- * Menangani Dashboard Pengurus, Laporan, Stok, dan Cetak Dokumen
+ * PENGURUS MODULE - FINAL FIXED VERSION
+ * Menangani Dashboard Pengurus, List Nasabah, Approval, dan Laporan
  */
 
 // --- LOAD DASHBOARD PENGURUS ---
 async function loadPengurusDashboard() {
-    console.log("Memuat Dashboard Pengurus..."); // Debugging
+    console.log("Memuat Dashboard Pengurus..."); 
     
     document.getElementById('pengurus-dashboard')?.classList.remove('hidden-section');
     
@@ -42,21 +42,10 @@ async function loadPengurusDashboard() {
         hargaListEl.innerHTML = '<span class="text-emerald-100 text-xs">Data harga belum tersedia.</span>';
     }
 
-    // 4. Load Pending Users
-    const { data: pending } = await supabaseClient.from('profiles').select('*').eq('role', 'pending').eq('bank_sampah_id', currentProfile.bank_sampah_id);
-    const tb = document.getElementById('table-pending-pengurus'); 
-    if(tb) {
-        tb.innerHTML = '';
-        if (!pending || pending.length === 0) {
-            tb.innerHTML = '<tr><td colspan="2" class="py-4 text-center text-xs text-gray-400">Tidak ada anggota pending.</td></tr>';
-        } else {
-            (pending||[]).forEach(u => { 
-                tb.innerHTML += `<tr><td class="py-3 px-4 font-medium text-sm">${u.nama_lengkap}</td><td class="py-3 px-4 text-right"><button onclick="approveUserByPengurus('${u.id}')" class="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700">Accept</button></td></tr>`; 
-            });
-        }
-    }
+    // 4. Load List Nasabah (Untuk Manage & Approve)
+    await loadNasabahListPengurus();
 
-    // 5. Load Dropdowns
+    // 5. Load Dropdowns untuk Form Transaksi
     await loadDropdownsPengurus();
     loadRecentTransactions();
     
@@ -69,6 +58,181 @@ async function loadPengurusDashboard() {
     }
 }
 
+// --- LOAD LIST NASABAH UNTUK PENGURUS ---
+async function loadNasabahListPengurus() {
+    const container = document.getElementById('list-nasabah-pengurus');
+    if(!container) return;
+    
+    container.innerHTML = '<div class="text-center text-xs text-gray-400 py-4">Memuat data nasabah...</div>';
+    
+    // Ambil semua profile dengan role 'nasabah' atau 'pending' di bank sampah ini
+    const { data: profiles } = await supabaseClient
+        .from('profiles')
+        .select('*')
+        .eq('bank_sampah_id', currentProfile.bank_sampah_id)
+        .in('role', ['nasabah', 'pending'])
+        .order('created_at', { ascending: false });
+    
+    // Ambil saldo tabungan untuk masing-masing nasabah
+    const { data: nasababs } = await supabaseClient
+        .from('nasabah')
+        .select('profile_id, saldo_tabungan')
+        .eq('bank_sampah_id', currentProfile.bank_sampah_id);
+    
+    const saldoMap = {};
+    (nasababs || []).forEach(n => saldoMap[n.profile_id] = n.saldo_tabungan || 0);
+    
+    container.innerHTML = '';
+    
+    if (!profiles || profiles.length === 0) {
+        container.innerHTML = '<div class="text-center text-xs text-gray-400 py-8">Belum ada nasabah terdaftar.</div>';
+        return;
+    }
+    
+    profiles.forEach(p => {
+        const isPending = p.role === 'pending';
+        const saldo = saldoMap[p.id] || 0;
+        
+        container.innerHTML += `
+        <div class="flex justify-between items-center p-4 bg-white rounded-lg border border-gray-100 shadow-sm mb-3">
+            <div>
+                <p class="font-bold text-gray-900">${p.nama_lengkap} ${isPending ? '<span class="text-[10px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full ml-2">PENDING</span>' : ''}</p>
+                <p class="text-xs text-gray-500">${p.no_hp || '-'} • Saldo: ${formatRupiah(saldo)}</p>
+            </div>
+            <div class="flex gap-2">
+                ${isPending ? `<button onclick="approveUserByPengurus('${p.id}')" class="bg-green-600 text-white px-3 py-1.5 rounded text-xs hover:bg-green-700">Approve</button>` : ''}
+                <button onclick="resetPasswordNasabah('${p.id}', '${p.nama_lengkap}')" class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs hover:bg-blue-700"><i class="fas fa-key"></i> Reset Pass</button>
+            </div>
+        </div>
+        `;
+    });
+}
+
+// --- FUNGSI DAFTAR NASABAH BARU (FIXED) ---
+function openRegisterNasabahModal() {
+    toggleModal('modal-register-nasabah');
+}
+
+document.getElementById('form-register-nasabah')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Mendaftar...';
+    btn.disabled = true;
+
+    try {
+        const nama = document.getElementById('reg-nasabah-nama').value;
+        const hp = document.getElementById('reg-nasabah-hp').value;
+        const alamat = document.getElementById('reg-nasabah-alamat').value;
+        let email = document.getElementById('reg-nasabah-email').value.trim();
+        const password = document.getElementById('reg-nasabah-pass').value;
+
+        // Jika email kosong, generate otomatis
+        if (!email) {
+            email = `nasabah_${Date.now()}@rajin.temp`;
+        }
+
+        let userId;
+        let isNewUser = true;
+
+        // Coba signUp dulu
+        const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+            email: email,
+            password: password,
+            options: {
+                data: { nama_lengkap: nama, no_hp: hp, alamat: alamat }
+            }
+        });
+
+        if (authError) {
+            // Jika error karena email sudah dipakai, coba login dulu buat dapetin UID
+            if (authError.message.toLowerCase().includes('already registered') || 
+                authError.message.toLowerCase().includes('invalid')) {
+                
+                const { data: loginData, error: loginError } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (loginError) {
+                    // Kalau login juga gagal, berarti password beda atau user belum confirmed
+                    throw new Error(`Email "${email}" sudah terdaftar tapi tidak bisa diakses. Silakan gunakan email lain atau reset password via Admin.`);
+                }
+
+                userId = loginData.user.id;
+                isNewUser = false;
+                
+                // Logout lagi biar session pengurus tetap aman
+                await supabaseClient.auth.signOut();
+                
+            } else {
+                throw authError;
+            }
+        } else {
+            userId = authData.user.id;
+        }
+
+        // Insert/Update Profile
+        const { error: profileError } = await supabaseClient.from('profiles').upsert({
+            id: userId,
+            role: 'nasabah', // Langsung nasabah, tidak perlu approve
+            status: 'active',
+            nama_lengkap: nama,
+            no_hp: hp,
+            alamat: alamat,
+            bank_sampah_id: currentProfile.bank_sampah_id // ASSIGN OTOMATIS KE BANK SAMPAH PENGURUS
+        }, { onConflict: 'id' });
+
+        if (profileError) throw profileError;
+
+        // Insert ke Tabel Nasabah (Saldo 0)
+        await supabaseClient.from('nasabah').upsert({
+            profile_id: userId,
+            bank_sampah_id: currentProfile.bank_sampah_id,
+            saldo_tabungan: 0
+        }, { onConflict: 'profile_id' });
+
+        let msg = `✅ Nasabah "${nama}" berhasil didaftarkan!\n\nEmail: ${email}\nPassword: ${password}`;
+        
+        if (isNewUser) {
+            msg += `\n\n⚠️ PENTING: Jalankan script ini di SQL Editor agar user bisa login tanpa verifikasi email:\n\nUPDATE auth.users SET email_confirmed_at = NOW() WHERE id = '${userId}';`;
+        }
+
+        alert(msg);
+        
+        toggleModal('modal-register-nasabah');
+        e.target.reset();
+        loadPengurusDashboard(); // Refresh list nasabah
+        
+    } catch (err) {
+        alert('Gagal mendaftarkan nasabah: ' + err.message);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+});
+
+// --- RESET PASSWORD NASABAH OLEH PENGURUS ---
+async function resetPasswordNasabah(userId, nama) {
+    const newPass = prompt(`Masukkan password baru untuk nasabah ${nama}:`, "nasabah123");
+    if (!newPass) return;
+    
+    const sqlScript = getResetPasswordSQL(userId, newPass);
+    alert(`⚠️ INSTRUKSI RESET PASSWORD MANUAL\n\nCopy script ini ke SQL Editor Supabase:\n\n${sqlScript}\n\nSetelah dijalankan, nasabah bisa login dengan password baru.`);
+}
+
+// --- APPROVE USER OLEH PENGURUS ---
+async function approveUserByPengurus(userId) {
+    const result = await approveUserAccount(userId, 'nasabah', currentProfile.bank_sampah_id);
+    if(result.success) { 
+        alert('Nasabah berhasil di-approve!'); 
+        loadPengurusDashboard(); 
+    } else { 
+        alert('Gagal: ' + result.message); 
+    }
+}
+
+// --- LOAD DROPDOWNS UNTUK FORM TRANSAKSI ---
 async function loadDropdownsPengurus() {
     // Nasabah
     const { data: nasabah } = await supabaseClient.from('nasabah').select('*, profiles(nama_lengkap)').eq('bank_sampah_id', currentProfile.bank_sampah_id);
@@ -115,57 +279,6 @@ async function loadDropdownsPengurus() {
     }
 }
 
-// --- FUNGSI DAFTAR NASABAH BARU ---
-function openRegisterNasabahModal() {
-    toggleModal('modal-register-nasabah');
-}
-
-document.getElementById('form-register-nasabah')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = e.target.querySelector('button[type="submit"]');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Mendaftar...';
-    btn.disabled = true;
-
-    try {
-        const nama = document.getElementById('reg-nasabah-nama').value;
-        const hp = document.getElementById('reg-nasabah-hp').value;
-        const alamat = document.getElementById('reg-nasabah-alamat').value;
-        const email = document.getElementById('reg-nasabah-email').value || `nasabah_${Date.now()}@rajin.temp`;
-        const password = document.getElementById('reg-nasabah-pass').value;
-
-        const { data: authData, error: authError } = await supabaseClient.auth.signUp({
-            email: email, password: password,
-            options: { data: { nama_lengkap: nama, no_hp: hp, alamat: alamat } }
-        });
-
-        if (authError) throw authError;
-        const userId = authData.user.id;
-
-        await supabaseClient.from('profiles').insert({
-            id: userId, role: 'nasabah', status: 'active',
-            nama_lengkap: nama, no_hp: hp, alamat: alamat,
-            bank_sampah_id: currentProfile.bank_sampah_id
-        });
-
-        await supabaseClient.from('nasabah').insert({
-            profile_id: userId, bank_sampah_id: currentProfile.bank_sampah_id, saldo_tabungan: 0
-        });
-
-        alert(`✅ Nasabah "${nama}" berhasil didaftarkan!\n\nEmail: ${email}\nPassword: ${password}\n\n⚠️ PENTING: Jalankan script ini di SQL Editor agar user bisa login tanpa verifikasi email:\n\nUPDATE auth.users SET email_confirmed_at = NOW() WHERE id = '${userId}';`);
-        
-        toggleModal('modal-register-nasabah');
-        e.target.reset();
-        loadPengurusDashboard(); 
-        
-    } catch (err) {
-        alert('Gagal mendaftarkan nasabah: ' + err.message);
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    }
-});
-
 // --- UPDATE PREVIEW HARGA ---
 function updateTrxPreview() { 
     const s = document.getElementById('trx-jenis'); 
@@ -182,13 +295,6 @@ function updateTrxPreview() {
         document.getElementById('trx-preview-total').textContent = 'Rp 0';
         document.getElementById('trx-harga-detail').textContent = 'Harga Offtaker - 30%';
     }
-}
-
-// --- APPROVE USER OLEH PENGURUS ---
-async function approveUserByPengurus(userId) {
-    const result = await approveUserAccount(userId, 'nasabah', currentProfile.bank_sampah_id);
-    if(result.success) { alert('Nasabah berhasil di-accept!'); loadPengurusDashboard(); }
-    else { alert('Gagal: ' + result.message); }
 }
 
 // --- HELPER FUNCTIONS ---
