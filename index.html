@@ -191,7 +191,7 @@
                 </div>
             </div>
 
-            <!-- PENGURUS DASHBOARD (LENGKAP DENGAN TAB LAPORAN & LIST NASABAH) -->
+            <!-- PENGURUS DASHBOARD (LENGKAP DENGAN FITUR HARGA & MARGIN) -->
             <div id="pengurus-dashboard" class="hidden-section space-y-6">
                 <!-- HEADER CARD PENGURUS -->
                 <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-lg flex justify-between items-center relative overflow-hidden">
@@ -199,9 +199,20 @@
                     <div class="relative z-10">
                         <h2 class="text-xl font-bold" id="pengurus-nama-bs">Bank Sampah Saya</h2>
                         <p class="text-emerald-100 text-sm mb-4">Kelola Transaksi & Anggota</p>
-                        <div class="bg-white/10 backdrop-blur-md rounded-lg p-3 border border-white/10 max-w-md">
-                            <p class="text-[10px] text-emerald-200 uppercase font-bold mb-1">💰 Harga Berlaku Hari Ini (Estimasi)</p>
-                            <div class="grid grid-cols-3 gap-2 text-xs" id="pengurus-harga-list"><span class="text-emerald-100">Memuat...</span></div>
+                        
+                        <!-- CARD HARGA DENGAN EDIT MARGIN -->
+                        <div class="bg-white/10 backdrop-blur-md rounded-lg p-4 border border-white/10 max-w-2xl">
+                            <div class="flex justify-between items-center mb-3">
+                                <p class="text-[10px] text-emerald-200 uppercase font-bold">💰 DAFTAR HARGA BERLAKU</p>
+                                <button onclick="openEditMarginModal()" class="text-[10px] bg-white/20 hover:bg-white/30 px-2 py-1 rounded text-white transition">
+                                    <i class="fas fa-edit mr-1"></i>Edit Margin
+                                </button>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 gap-2 text-xs max-h-40 overflow-y-auto pr-1" id="pengurus-harga-list">
+                                <!-- Akan diisi via JS -->
+                                <span class="text-emerald-100 animate-pulse">Memuat data harga...</span>
+                            </div>
                         </div>
                     </div>
                     <div class="relative z-10 flex flex-col items-end gap-3">
@@ -394,6 +405,24 @@
         </div>
     </div>
 
+    <!-- MODAL EDIT MARGIN HARGA -->
+    <div id="modal-edit-margin" class="hidden-section fixed inset-0 bg-black/60 z-[80] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 chat-enter border-t-4 border-blue-600 max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg font-bold mb-2 flex items-center gap-2"><i class="fas fa-percentage text-blue-600"></i> Edit Margin Harga</h3>
+            <p class="text-xs text-gray-500 mb-4">Atur persentase potongan harga dari harga off-taker pusat untuk setiap jenis sampah.</p>
+            
+            <div id="edit-margin-list" class="space-y-3 mb-4">
+                <!-- List input margin akan dimuat via JS -->
+                <div class="text-center text-xs text-gray-400 py-4">Memuat...</div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 pt-4 border-t">
+                <button type="button" onclick="toggleModal('modal-edit-margin')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Batal</button>
+                <button onclick="saveMarginSettings()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL CETAK DOKUMEN DINAMIS -->
     <div id="modal-cetak-dokumen" class="hidden-section fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 chat-enter border-t-4 border-blue-600 max-h-[90vh] overflow-y-auto">
@@ -441,6 +470,7 @@
     <!-- SCRIPTS (URUTAN PENTING!) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="account-manager.js"></script>
+    <!-- HAPUS BARIS INI JIKA ADA: <script src="pengurus.js"></script> -->
     <script src="addon.js"></script>
 </body>
 </html>
