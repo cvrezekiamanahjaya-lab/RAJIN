@@ -129,3 +129,17 @@ document.getElementById('form-register-nasabah')?.addEventListener('submit', asy
         btn.disabled = false;
     }
 });
+// --- AUTO-LOAD DASHBOARD PENGURUS SAAT LOGIN ---
+// Ini akan dipanggil otomatis setelah addon.js selesai load master data
+window.addEventListener('DOMContentLoaded', async () => {
+    // Tunggu sampai currentProfile dan master data siap
+    const checkAndLoad = setInterval(() => {
+        if (currentProfile && currentProfile.role === 'pengurus' && jenisSampahList.length > 0) {
+            clearInterval(checkAndLoad);
+            loadPengurusDashboard();
+        }
+    }, 500); // Cek setiap 500ms
+    
+    // Timeout setelah 10 detik kalau data nggak ready
+    setTimeout(() => clearInterval(checkAndLoad), 10000);
+});
