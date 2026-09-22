@@ -1,74 +1,90 @@
 /**
- * PENGURUS MODULE - CRITICAL FIX VERSION
- * Fix: Email Invalid, List Harga, Validasi Form
+ * PENGURUS MODULE - FINAL STABLE VERSION
+ * Fix: Infinite Loop, Error 406, List Harga
  */
 
-// --- LOAD DASHBOARD PENGURUS (FIX LIST HARGA) ---
+// --- LOAD DASHBOARD PENGURUS ---
 async function loadPengurusDashboard() {
+    // Cegah multiple call dengan flag
+    if(window.is_loading_pengurus) return;
+    window.is_loading_pengurus = true;
+    
     console.log("Memuat Dashboard Pengurus..."); 
     
-    document.getElementById('pengurus-dashboard')?.classList.remove('hidden-section');
-    
-    // 1. Load Info Bank Sampah
-    const { data: bs } = await supabaseClient.from('bank_sampah').select('*').eq('id', currentProfile.bank_sampah_id).single();
-    if(document.getElementById('pengurus-nama-bs')) 
-        document.getElementById('pengurus-nama-bs').textContent = bs?.nama_bank || 'Bank Sampah Saya';
-    
-    // 2. Load Total Tabungan
-    const { data: allNasabah } = await supabaseClient.from('nasabah').select('saldo_tabungan').eq('bank_sampah_id', currentProfile.bank_sampah_id);
-    const totalTabungan = (allNasabah || []).reduce((sum, n) => sum + (n.saldo_tabungan || 0), 0);
-    if(document.getElementById('pengurus-total-tabungan'))
-        document.getElementById('pengurus-total-tabungan').textContent = formatRupiah(totalTabungan);
-    
-    // 3. FIX: Load & Tampilkan Harga Berlaku (Offtaker - 30%)
-    // Pastikan jenisSampahList dan hargaOfftakerMap sudah terisi
-    const hargaListEl = document.getElementById('pengurus-harga-list');
-    if(hargaListEl && Array.isArray(jenisSampahList) && jenisSampahList.length > 0) {
-        hargaListEl.innerHTML = '';
-        const popularSampah = ['PLASTIK', 'KARDUS', 'BESI', 'BOTOL', 'ALUMINIUM'];
+    try {
+        document.getElementById('pengurus-dashboard')?.classList.remove('hidden-section');
         
-        let hasData = false;
-        jenisSampahList.forEach(js => {
-            if (popularSampah.some(p => js.nama_sampah.toUpperCase().includes(p))) {
-                const hargaOfftaker = hargaOfftakerMap[js.id] || 0;
-                const hargaNasabah = Math.round(hargaOfftaker * 0.7); 
-                hargaListEl.innerHTML += `
-                    <div class="bg-white/10 rounded p-2 border border-white/10">
-                        <p class="text-[9px] text-emerald-100 truncate">${js.nama_sampah}</p>
-                        <p class="font-bold text-white text-sm">${formatRupiah(hargaNasabah)}</p>
-                    </div>
-                `;
-                hasData = true;
-            }
-        });
+        // 1. Load Info Bank Sampah
+        const { data: bs, error: bsError } = await supabaseClient.from('bank_sampah').select('*').eq('id', currentProfile.bank_sampah_id).single();
         
-        if(!hasData) {
-            hargaListEl.innerHTML = '<span class="text-emerald-100 text-xs">Belum ada data harga populer.</span>';
+        if(bsError) {
+            console.error("Error loading bank sampah:", bsError);
+            alert(`Gagal memuat data Bank Sampah: ${bsError.message}\n\nKemungkinan RLS memblokir akses atau bank_sampah_id tidak valid.`);
+            window.is_loading_pengurus = false;
+            return;
         }
-    } else if (hargaListEl) {
-        // Jika master data belum load, tunggu sebentar lalu coba lagi
-        hargaListEl.innerHTML = '<span class="text-emerald-100 text-xs animate-pulse">Memuat data harga...</span>';
-        setTimeout(() => loadPengurusDashboard(), 1000); 
-        return; // Stop eksekusi sementara
-    }
+        
+        if(document.getElementById('pengurus-nama-bs')) 
+            document.getElementById('pengurus-nama-bs').textContent = bs?.nama_bank || 'Bank Sampah Saya';
+        
+        // 2. Load Total Tabungan
+        const { data: allNasabah } = await supabaseClient.from('nasabah').select('saldo_tabungan').eq('bank_sampah_id', currentProfile.bank_sampah_id);
+        const totalTabungan = (allNasabah || []).reduce((sum, n) => sum + (n.saldo_tabungan || 0), 0);
+        if(document.getElementById('pengurus-total-tabungan'))
+            document.getElementById('pengurus-total-tabungan').textContent = formatRupiah(totalTabungan);
+        
+        // 3. Load & Tampilkan Harga Berlaku (Offtaker - 30%)
+        const hargaListEl = document.getElementById('pengurus-harga-list');
+        if(hargaListEl && Array.isArray(jenisSampahList) && jenisSampahList.length > 0) {
+            hargaListEl.innerHTML = '';
+            const popularSampah = ['PLASTIK', 'KARDUS', 'BESI', 'BOTOL', 'ALUMINIUM'];
+            
+            let hasData = false;
+            jenisSampahList.forEach(js => {
+                if (popularSampah.some(p => js.nama_sampah.toUpperCase().includes(p))) {
+                    const hargaOfftaker = hargaOfftakerMap[js.id] || 0;
+                    const hargaNasabah = Math.round(hargaOfftaker * 0.7); 
+                    hargaListEl.innerHTML += `
+                        <div class="bg-white/10 rounded p-2 border border-white/10">
+                            <p class="text-[9px] text-emerald-100 truncate">${js.nama_sampah}</p>
+                            <p class="font-bold text-white text-sm">${formatRupiah(hargaNasabah)}</p>
+                        </div>
+                    `;
+                    hasData = true;
+                }
+            });
+            
+            if(!hasData) {
+                hargaListEl.innerHTML = '<span class="text-emerald-100 text-xs">Belum ada data harga populer.</span>';
+            }
+        } else if (hargaListEl) {
+            hargaListEl.innerHTML = '<span class="text-emerald-100 text-xs">Data master harga belum tersedia.</span>';
+        }
 
-    // 4. Load List Nasabah
-    await loadNasabahListPengurus();
+        // 4. Load List Nasabah
+        await loadNasabahListPengurus();
 
-    // 5. Load Dropdowns untuk Form Transaksi
-    await loadDropdownsPengurus();
-    loadRecentTransactions();
-    
-    // Load data tab aktif jika bukan tab transaksi
-    const activeTabBtn = document.querySelector('.pengurus-tab.active-tab');
-    if(activeTabBtn) {
-        const tabName = activeTabBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
-        if(tabName === 'stok') loadStokData();
-        if(tabName === 'laba-rugi') calculateLabaRugi();
+        // 5. Load Dropdowns untuk Form Transaksi
+        await loadDropdownsPengurus();
+        loadRecentTransactions();
+        
+        // Load data tab aktif jika bukan tab transaksi
+        const activeTabBtn = document.querySelector('.pengurus-tab.active-tab');
+        if(activeTabBtn) {
+            const tabName = activeTabBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
+            if(tabName === 'stok') loadStokData();
+            if(tabName === 'laba-rugi') calculateLabaRugi();
+        }
+        
+    } catch(err) {
+        console.error("Error in loadPengurusDashboard:", err);
+        alert("Terjadi kesalahan saat memuat dashboard: " + err.message);
+    } finally {
+        window.is_loading_pengurus = false;
     }
 }
 
-// --- FIX: DAFTAR NASABAH BARU (HANDLE EMAIL INVALID/DUPLICATE) ---
+// --- DAFTAR NASABAH BARU (FIXED) ---
 document.getElementById('form-register-nasabah')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -130,7 +146,6 @@ document.getElementById('form-register-nasabah')?.addEventListener('submit', asy
                 });
 
                 if (loginError) {
-                    // Jika login gagal, berarti password beda atau user belum confirmed
                     throw new Error(`Email "${email}" sudah terdaftar tapi tidak bisa diakses. Silakan gunakan email lain atau hubungi Admin untuk reset password.`);
                 }
 
@@ -187,7 +202,7 @@ document.getElementById('form-register-nasabah')?.addEventListener('submit', asy
     }
 });
 
-// --- FUNGSI LAINNYA (TETAP SAMA SEPERTI SEBELUMNYA) ---
+// --- FUNGSI LAINNYA (TETAP SAMA) ---
 
 function openRegisterNasabahModal() {
     toggleModal('modal-register-nasabah');
