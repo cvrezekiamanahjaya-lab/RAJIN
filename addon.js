@@ -174,10 +174,36 @@ function showSection(id) {
 }
 
 async function loadMasterData() {
-    const { data: js } = await supabaseClient.from('jenis_sampah').select('*').order('nama_sampah'); jenisSampahList = js || [];
-    const { data: ho } = await supabaseClient.from('harga_offtaker').select('jenis_sampah_id, harga_per_kg').is('bank_sampah_id', null); hargaOfftakerMap = {}; (ho || []).forEach(h => hargaOfftakerMap[h.jenis_sampah_id] = h.harga_per_kg);
+    console.log("Memuat master data...");
+    
+    // Load jenis sampah
+    const { data: js, error: jsError } = await supabaseClient.from('jenis_sampah').select('*').order('nama_sampah');
+    if(jsError) {
+        console.error("Error loading jenis_sampah:", jsError);
+        jenisSampahList = [];
+    } else {
+        jenisSampahList = js || [];
+        console.log(`Loaded ${jenisSampahList.length} jenis sampah`);
+    }
+    
+    // Load harga off-taker - COBA TANPA FILTER bank_sampah_id DULU
+    const { data: ho, error: hoError } = await supabaseClient.from('harga_offtaker').select('*');
+    if(hoError) {
+        console.error("Error loading harga_offtaker:", hoError);
+        hargaOfftakerMap = {};
+    } else {
+        hargaOfftakerMap = {};
+        // Filter manual di JavaScript biar lebih aman
+        (ho || []).forEach(h => {
+            // Hanya ambil yang bank_sampah_id-nya NULL atau kosong
+            if(!h.bank_sampah_id || h.bank_sampah_id === 'null') {
+                hargaOfftakerMap[h.jenis_sampah_id] = h.harga_per_kg;
+            }
+        });
+        console.log(`Loaded ${Object.keys(hargaOfftakerMap).length} harga off-taker`);
+        console.log("Harga map:", hargaOfftakerMap);
+    }
 }
-
 function formatRupiah(a) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(a); }
 
 // ==========================================
