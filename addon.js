@@ -111,7 +111,7 @@ async function loadAdminDashboard() {
     document.getElementById('admin-dashboard').classList.remove('hidden-section');
     const { count } = await supabaseClient.from('bank_sampah').select('*', { count: 'exact', head: true }); document.getElementById('stat-total-bs').textContent = count || 0;
     loadTableBankSampah(); loadTableHargaOfftaker(); loadPendingUsersAdmin(); loadActiveUsersAdmin();
-    loadPduData(); // Load data dropdown PDU saat dashboard admin dibuka
+    loadPduData(); 
 }
 
 function switchAdminTab(t) { 
@@ -123,13 +123,11 @@ function switchAdminTab(t) {
 
 async function loadTableBankSampah() { const { data } = await supabaseClient.from('bank_sampah').select('*').order('created_at', { ascending: false }); const tb = document.getElementById('table-bs-body'); tb.innerHTML = ''; (data||[]).forEach(r => tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${r.nama_bank}</td><td class="px-6 py-4 text-gray-600">${r.alamat||'-'}</td><td class="px-6 py-4 text-gray-600">${r.no_hp||'-'}</td></tr>`); }
 
-// FUNGSI LOAD TABEL HARGA DENGAN TOMBOL EDIT MANUAL
 async function loadTableHargaOfftaker() { 
     const { data } = await supabaseClient.from('harga_offtaker').select('*, jenis_sampah(nama_sampah)').is('bank_sampah_id', null).order('jenis_sampah(nama_sampah)'); 
     const tb = document.getElementById('table-offtaker-body'); 
     tb.innerHTML = ''; 
     
-    // Pastikan header tabel punya kolom Aksi
     const thead = tb.parentElement.querySelector('thead tr');
     if(thead && thead.children.length < 3) {
         const th = document.createElement('th');
@@ -152,32 +150,15 @@ async function loadTableHargaOfftaker() {
     }); 
 }
 
-// FUNGSI EDIT HARGA MANUAL
 async function editHargaManual(jenisId, namaSampah, hargaLama) {
     const newHarga = prompt(`Edit Harga untuk:\n${namaSampah}\n\nHarga Lama: ${formatRupiah(hargaLama)}\n\nMasukkan Harga Baru (angka saja):`, hargaLama);
-    
-    if (newHarga === null) return; // User cancel
-    
-    const hargaBaru = parseFloat(newHarga.replace(/[^\d.-]/g, '')); // Bersihkan karakter non-angka
-    
-    if (isNaN(hargaBaru) || hargaBaru < 0) {
-        alert("Harga tidak valid! Masukkan angka saja.");
-        return;
-    }
+    if (newHarga === null) return;
+    const hargaBaru = parseFloat(newHarga.replace(/[^\d.-]/g, ''));
+    if (isNaN(hargaBaru) || hargaBaru < 0) { alert("Harga tidak valid!"); return; }
 
-    const { error } = await supabaseClient
-        .from('harga_offtaker')
-        .update({ harga_per_kg: hargaBaru })
-        .eq('jenis_sampah_id', jenisId)
-        .is('bank_sampah_id', null);
-
-    if (error) {
-        alert("Gagal update harga: " + error.message);
-    } else {
-        alert("Harga berhasil diubah!");
-        loadTableHargaOfftaker(); // Refresh tabel
-        loadMasterData(); // Update variabel global
-    }
+    const { error } = await supabaseClient.from('harga_offtaker').update({ harga_per_kg: hargaBaru }).eq('jenis_sampah_id', jenisId).is('bank_sampah_id', null);
+    if (error) alert("Gagal update: " + error.message);
+    else { alert("Harga berhasil diubah!"); loadTableHargaOfftaker(); loadMasterData(); }
 }
 
 async function loadPendingUsersAdmin() {
@@ -209,20 +190,21 @@ async function submitApproveUser() {
     const userId = document.getElementById('approve-user-id').value;
     const role = document.getElementById('approve-role').value;
     const bankId = document.getElementById('approve-bank').value;
-    await supabaseClient.from('profiles').update({ role: role, bank_sampah_id: bankId }).eq('id', userId);
-    if (role === 'nasabah') await supabaseClient.from('nasabah').upsert({ profile_id: userId, bank_sampah_id: bankId }, { onConflict: 'profile_id' });
-    alert('User berhasil di-approve!'); toggleModal('modal-approve-user'); loadPendingUsersAdmin(); loadActiveUsersAdmin();
+    
+    // Gunakan fungsi dari account-manager.js
+    const result = await approveUserAccount(userId, role, bankId);
+    
+    if(result.success) {
+        alert(result.message); 
+        toggleModal('modal-approve-user'); 
+        loadPendingUsersAdmin(); 
+        loadActiveUsersAdmin();
+    } else {
+        alert("Gagal Approve: " + result.message);
+    }
 }
 
-// --- MANUAL USER CREATION (ADMIN) ---
-async function openCreateUserModal() {
-    const sel = document.getElementById('new-user-bs');
-    sel.innerHTML = '<option value="">-- Tanpa Bank Sampah --</option>';
-    const { data: bs } = await supabaseClient.from('bank_sampah').select('*').order('nama_bank');
-    (bs||[]).forEach(b => sel.innerHTML += `<option value="${b.id}">${b.nama_bank}</option>`);
-    toggleModal('modal-create-user');
-}
-
+// --- INTEGRASI FORM BUAT AKUN MANUAL KE ACCOUNT-MANAGER.JS ---
 document.getElementById('form-create-user').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
@@ -237,64 +219,63 @@ document.getElementById('form-create-user').addEventListener('submit', async (e)
         const role = document.getElementById('new-user-role').value;
         const bankId = document.getElementById('new-user-bs').value || null;
 
-        const tempId = crypto.randomUUID(); 
-        
-        const { error: profileError } = await supabaseClient.from('profiles').insert({
-            id: tempId, role: 'pending', status: 'active', nama_lengkap: nama, no_hp: '-', alamat: '-', bank_sampah_id: bankId
-        });
+        // Panggil fungsi createManualAccount dari account-manager.js
+        const result = await createManualAccount(email, password, nama, role, bankId);
 
-        if (profileError) throw profileError;
-
-        alert(`✅ Entry Profil Berhasil Dibuat!\n\n⚠️ LANGKAH TERAKHIR (WAJIB):\nKarena keamanan browser, Anda harus membuat User Auth secara manual via SQL Editor agar bisa login.\n\nCopy script ini ke SQL Editor:\n\nINSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at, confirmation_token, email_change, email_change_token_new, recovery_token) VALUES ('00000000-0000-0000-0000-000000000000', '${tempId}', 'authenticated', 'authenticated', '${email}', crypt('${password}', gen_salt('bf')), NOW(), '{\"provider\":\"email\",\"providers\":[\"email\"]}', '{\"nama_lengkap\":\"${nama}\"}', NOW(), NOW(), '', '', '', '');\n\nSetelah itu, approve user ini di dashboard!`);
-        
-        toggleModal('modal-create-user');
-        e.target.reset();
-        loadPendingUsersAdmin(); 
-        loadActiveUsersAdmin();
+        if (result.success) {
+            alert(`✅ ${result.message}`);
+            toggleModal('modal-create-user');
+            e.target.reset();
+            loadPendingUsersAdmin(); 
+            loadActiveUsersAdmin();
+        } else {
+            alert(' Gagal membuat akun: ' + result.message);
+        }
         
     } catch (err) {
-        alert('Gagal membuat entry profil: ' + err.message);
+        alert('Terjadi kesalahan sistem: ' + err.message);
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
     }
 });
 
-// --- FUNGSI LOAD DATA UNTUK TAB PDU (DISESUAIKAN) ---
+async function openCreateUserModal() {
+    const sel = document.getElementById('new-user-bs');
+    sel.innerHTML = '<option value="">-- Tanpa Bank Sampah --</option>';
+    const { data: bs } = await supabaseClient.from('bank_sampah').select('*').order('nama_bank');
+    (bs||[]).forEach(b => sel.innerHTML += `<option value="${b.id}">${b.nama_bank}</option>`);
+    toggleModal('modal-create-user');
+}
+
+// --- FUNGSI LOAD DATA UNTUK TAB PDU ---
 async function loadPduData() {
     const { data: bs } = await supabaseClient.from('bank_sampah').select('*').order('nama_bank');
     
-    // Dropdown untuk Pembelian dari Bank Sampah
     const selBsBeli = document.getElementById('beli-bs-select'); 
     if(selBsBeli) {
         selBsBeli.innerHTML = '<option value="">-- Pilih Bank Sampah --</option>';
         (bs||[]).forEach(b => selBsBeli.innerHTML += `<option value="${b.id}">${b.nama_bank}</option>`);
     }
 
-    // Dropdown untuk Penjualan ke PDU (Tidak perlu pilih Bank Sampah sesuai request)
-    // Tapi kita butuh dropdown Jenis Sampah
     const selJenisJual = document.getElementById('jual-jenis-select');
     if(selJenisJual) {
         selJenisJual.innerHTML = '<option value="">-- Pilih Jenis Sampah --</option>';
         jenisSampahList.forEach(js => {
             selJenisJual.innerHTML += `<option value="${js.id}" data-harga="${hargaOfftakerMap[js.id] || 0}">${js.nama_sampah}</option>`;
         });
-        
-        // Auto-fill harga saat jenis sampah dipilih
         selJenisJual.addEventListener('change', function() {
             const opt = this.options[this.selectedIndex];
             document.getElementById('jual-harga').value = opt.dataset.harga || '';
         });
     }
 
-    // Dropdown Jenis Sampah untuk Pembelian
     const selJenisBeli = document.getElementById('beli-jenis-select');
     if(selJenisBeli) {
         selJenisBeli.innerHTML = '<option value="">-- Pilih Jenis Sampah --</option>';
         jenisSampahList.forEach(js => {
             selJenisBeli.innerHTML += `<option value="${js.id}" data-harga="${hargaOfftakerMap[js.id] || 0}">${js.nama_sampah}</option>`;
         });
-        
         selJenisBeli.addEventListener('change', function() {
             const opt = this.options[this.selectedIndex];
             document.getElementById('beli-harga').value = opt.dataset.harga || '';
@@ -302,7 +283,6 @@ async function loadPduData() {
     }
 }
 
-// --- HANDLE FORM PEMBELIAN DARI BANK SAMPAH ---
 document.getElementById('admin-form-beli')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const bsId = document.getElementById('beli-bs-select').value;
@@ -312,29 +292,16 @@ document.getElementById('admin-form-beli')?.addEventListener('submit', async (e)
 
     if (!bsId || !jsId || !berat || !harga) { alert('Lengkapi data pembelian!'); return; }
 
-    // Simpan sebagai transaksi pembelian (kategori: beli)
-    // Karena ini Admin beli dari Bank Sampah, kita anggap ini stok masuk ke Admin
     const { error } = await supabaseClient.from('transaksi').insert({
-        bank_sampah_id: bsId, // Dari bank sampah mana
-        nasabah_id: null, // Bukan transaksi nasabah
-        jenis_sampah_id: jsId,
-        berat_kg: berat,
-        harga_saat_transaksi: harga,
-        total_harga: berat * harga,
-        kategori_transaksi: 'beli', // Kategori pembelian
-        status_bayar: 'dibayar',
-        tanggal_transaksi: new Date().toISOString()
+        bank_sampah_id: bsId, nasabah_id: null, jenis_sampah_id: jsId,
+        berat_kg: berat, harga_saat_transaksi: harga, total_harga: berat * harga,
+        kategori_transaksi: 'beli', status_bayar: 'dibayar', tanggal_transaksi: new Date().toISOString()
     });
 
-    if (error) {
-        alert('Gagal mencatat pembelian: ' + error.message);
-    } else {
-        alert('Pembelian dari Bank Sampah berhasil dicatat!');
-        e.target.reset();
-    }
+    if (error) alert('Gagal mencatat pembelian: ' + error.message);
+    else { alert('Pembelian berhasil dicatat!'); e.target.reset(); }
 });
 
-// --- HANDLE FORM PENJUALAN KE PDU ---
 document.getElementById('admin-form-jual')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const jsId = document.getElementById('jual-jenis-select').value;
@@ -344,54 +311,41 @@ document.getElementById('admin-form-jual')?.addEventListener('submit', async (e)
 
     if (!jsId || !berat || !harga) { alert('Lengkapi data penjualan!'); return; }
 
-    // Simpan ke tabel penjualan
     const { error } = await supabaseClient.from('penjualan').insert({
-        bank_sampah_id: null, // Tidak terikat bank sampah spesifik (Admin pusat)
-        jenis_sampah_id: jsId,
-        berat_kg: berat,
-        harga_jual_per_kg: harga,
-        total_pendapatan: berat * harga,
-        nama_pembeli: pembeli || 'PDU / Offtaker',
-        tanggal_jual: new Date().toISOString()
+        bank_sampah_id: null, jenis_sampah_id: jsId, berat_kg: berat,
+        harga_jual_per_kg: harga, total_pendapatan: berat * harga,
+        nama_pembeli: pembeli || 'PDU / Offtaker', tanggal_jual: new Date().toISOString()
     });
 
     if (error) {
-        // Fallback jika tabel penjualan belum ada
         await supabaseClient.from('transaksi').insert({
-            bank_sampah_id: null,
-            nasabah_id: null,
-            jenis_sampah_id: jsId,
-            berat_kg: berat,
-            harga_saat_transaksi: harga,
-            total_harga: berat * harga,
-            kategori_transaksi: 'jual_pdu', // Kategori khusus
-            status_bayar: 'dibayar',
-            tanggal_transaksi: new Date().toISOString()
+            bank_sampah_id: null, nasabah_id: null, jenis_sampah_id: jsId,
+            berat_kg: berat, harga_saat_transaksi: harga, total_harga: berat * harga,
+            kategori_transaksi: 'jual_pdu', status_bayar: 'dibayar', tanggal_transaksi: new Date().toISOString()
         });
     }
 
-    alert('Penjualan ke PDU berhasil dicatat!');
-    e.target.reset();
+    alert('Penjualan ke PDU berhasil dicatat!'); e.target.reset();
 });
 
 // --- MANAJEMEN USER: RESET PASSWORD & EDIT ---
 async function resetPasswordAdmin(userId, email) {
     const newPass = prompt(`Masukkan password baru untuk user ${email}:`, "Rajin123!");
     if (!newPass) return;
-    alert(`⚠️ INSTRUKSI RESET PASSWORD MANUAL\n\nKarena alasan keamanan browser, reset password harus dilakukan via SQL Editor.\n\nSilakan copy-paste script ini ke Supabase SQL Editor:\n\nUPDATE auth.users SET encrypted_password = crypt('${newPass}', gen_salt('bf')) WHERE id = '${userId}';\n\nSetelah dijalankan, user bisa login dengan password baru.`);
+    const sqlScript = getResetPasswordSQL(userId, newPass); // Pakai fungsi dari account-manager.js
+    alert(`⚠️ INSTRUKSI RESET PASSWORD MANUAL\n\nCopy script ini ke SQL Editor Supabase:\n\n${sqlScript}\n\nSetelah dijalankan, user bisa login dengan password baru.`);
 }
 
 async function editUserRole(userId) {
     const newRole = prompt("Ubah role user (admin/pengurus/nasabah):");
-    if (!newRole || !['admin', 'pengurus', 'nasabah'].includes(newRole.toLowerCase())) {
-        alert("Role tidak valid!"); return;
-    }
-    await supabaseClient.from('profiles').update({ role: newRole.toLowerCase() }).eq('id', userId);
-    alert("Role berhasil diubah!");
-    loadActiveUsersAdmin();
+    if (!newRole || !['admin', 'pengurus', 'nasabah'].includes(newRole.toLowerCase())) { alert("Role tidak valid!"); return; }
+    
+    const result = await updateUserRole(userId, newRole.toLowerCase()); // Pakai fungsi dari account-manager.js
+    if(result.success) { alert("Role berhasil diubah!"); loadActiveUsersAdmin(); }
+    else { alert("Gagal ubah role: " + result.message); }
 }
 
-// --- PENGURUS FUNCTIONS (PDU) ---
+// --- PENGURUS FUNCTIONS ---
 async function loadPengurusDashboard() {
     document.getElementById('pengurus-dashboard').classList.remove('hidden-section');
     const { data: bs } = await supabaseClient.from('bank_sampah').select('*').eq('id', currentProfile.bank_sampah_id).single();
@@ -411,8 +365,8 @@ async function loadPengurusDashboard() {
     
     jenisSampahList.forEach(js => {
         const hd = hargaOfftakerMap[js.id] || 0; const st = hnm[js.id];
-        let fp = 0; let ml = 'Persen (30%)';
-        if(st) { if(st.mode_harga==='custom'){fp=st.harga_custom;ml='Custom'} else if(st.mode_harga==='offtaker'){fp=hd;ml='Ikut Offtaker'} else {fp=hd*(1-st.persentase/100);ml=`Persen (${st.persentase}%)`} } else { fp=hd*0.7; }
+        let fp = 0; 
+        if(st) { if(st.mode_harga==='custom'){fp=st.harga_custom;} else if(st.mode_harga==='offtaker'){fp=hd;} else {fp=hd*(1-st.persentase/100);} } else { fp=hd*0.7; }
         const opt = document.createElement('option'); opt.value=js.id; opt.textContent=js.nama_sampah; opt.dataset.harga=fp; opt.dataset.satuan=js.satuan; selJ.appendChild(opt);
     });
 
@@ -463,9 +417,9 @@ document.getElementById('form-tarik').addEventListener('submit', async (e) => {
 });
 
 async function approveUserByPengurus(userId) {
-    await supabaseClient.from('profiles').update({ role: 'nasabah' }).eq('id', userId);
-    await supabaseClient.from('nasabah').upsert({ profile_id: userId, bank_sampah_id: currentProfile.bank_sampah_id }, { onConflict: 'profile_id' });
-    alert('Nasabah berhasil di-accept!'); loadPengurusDashboard();
+    const result = await approveUserAccount(userId, 'nasabah', currentProfile.bank_sampah_id);
+    if(result.success) { alert('Nasabah berhasil di-accept!'); loadPengurusDashboard(); }
+    else { alert('Gagal: ' + result.message); }
 }
 
 function updateTrxPreview() { const s=document.getElementById('trx-jenis'); const b=parseFloat(document.getElementById('trx-berat').value)||0; const o=s.options[s.selectedIndex]; if(o&&o.value){document.getElementById('trx-preview-total').textContent=formatRupiah((parseFloat(o.dataset.harga)||0)*b);}else{document.getElementById('trx-preview-total').textContent='Rp 0';} }
@@ -519,7 +473,6 @@ async function loadNasabahDashboard() {
 
 // --- CHAT HELPER LOGIC ---
 function toggleChat() { document.getElementById('chat-window').classList.toggle('hidden-section'); }
-
 function addChatMessage(text, isUser = false) {
     const container = document.getElementById('chat-messages');
     const div = document.createElement('div');
@@ -554,13 +507,11 @@ async function askFaq(key) {
     }, 600);
 }
 
-// --- EXPORT & IMPORT CSV (FIXED & SYNCED) ---
+// --- EXPORT & IMPORT CSV ---
 function exportOfftakerCSV(){
-    // Format Export yang pasti bisa di-import ulang
     let csv = '\uFEFFNama Sampah,Harga\n'; 
     jenisSampahList.forEach(j=>{
         const harga = hargaOfftakerMap[j.id] || 0;
-        // Pakai kutip untuk nama sampah biar aman kalau ada koma
         csv += `"${j.nama_sampah}",${harga}\n`;
     });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -574,74 +525,31 @@ function exportOfftakerCSV(){
 async function handleImportOfftaker(input){
     const f = input.files[0];
     if(!f) return;
-    
     try {
         const t = await f.text();
         const lines = t.split('\n').filter(line => line.trim() !== ''); 
-        let successCount = 0;
-        let errorCount = 0;
-        
-        // Lewati header (baris pertama)
+        let successCount = 0; let errorCount = 0;
         for(let i = 1; i < lines.length; i++) {
             const line = lines[i].trim();
             if(!line) continue;
-            
-            // Regex pintar buat handle CSV dengan koma di dalam kutip
             const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-            if(!matches || matches.length < 2) {
-                errorCount++;
-                continue;
-            }
-            
+            if(!matches || matches.length < 2) { errorCount++; continue; }
             let namaSampah = matches[0].replace(/"/g, '').trim();
             let hargaStr = matches[1].replace(/"/g, '').replace(/[^\d.-]/g, '').trim();
             let harga = parseFloat(hargaStr);
-            
-            if(isNaN(harga)) {
-                errorCount++;
-                continue;
-            }
-            
-            // Cari ID jenis sampah yang cocok (case insensitive & partial match)
-            const js = jenisSampahList.find(x => 
-                x.nama_sampah.toLowerCase() === namaSampah.toLowerCase() ||
-                x.nama_sampah.toLowerCase().includes(namaSampah.toLowerCase()) ||
-                namaSampah.toLowerCase().includes(x.nama_sampah.toLowerCase())
-            );
-            
+            if(isNaN(harga)) { errorCount++; continue; }
+            const js = jenisSampahList.find(x => x.nama_sampah.toLowerCase() === namaSampah.toLowerCase() || x.nama_sampah.toLowerCase().includes(namaSampah.toLowerCase()) || namaSampah.toLowerCase().includes(x.nama_sampah.toLowerCase()));
             if(js) {
-                const { error } = await supabaseClient
-                    .from('harga_offtaker')
-                    .upsert(
-                        { 
-                            jenis_sampah_id: js.id, 
-                            bank_sampah_id: null, 
-                            harga_per_kg: harga 
-                        },
-                        { onConflict: 'jenis_sampah_id, bank_sampah_id' }
-                    );
-                    
-                if(!error) successCount++;
-                else errorCount++;
-            } else {
-                errorCount++; 
-            }
+                const { error } = await supabaseClient.from('harga_offtaker').upsert({ jenis_sampah_id: js.id, bank_sampah_id: null, harga_per_kg: harga }, { onConflict: 'jenis_sampah_id, bank_sampah_id' });
+                if(!error) successCount++; else errorCount++;
+            } else { errorCount++; }
         }
-        
         let msg = `Import selesai!\n✅ Berhasil: ${successCount} data\n❌ Gagal/Skip: ${errorCount} data`;
         if(errorCount > 0) msg += '\n\n(Cek apakah nama sampah di CSV sama dengan Master Data)';
-        
         alert(msg);
-        loadTableHargaOfftaker(); 
-        loadMasterData(); // Update variabel global biar real-time
-        input.value = ''; 
-        
-    } catch(err) {
-        alert('Error saat memproses file: ' + err.message);
-    }
+        loadTableHargaOfftaker(); loadMasterData(); input.value = ''; 
+    } catch(err) { alert('Error saat memproses file: ' + err.message); }
 }
 
 function toggleModal(id){document.getElementById(id).classList.toggle('hidden-section');}
-
-// Start App
 window.addEventListener('DOMContentLoaded', initApp);
