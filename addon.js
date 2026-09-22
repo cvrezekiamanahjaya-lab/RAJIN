@@ -64,14 +64,14 @@ async function initApp() {
 }
 
 function switchAuthTab(tab) {
-    document.getElementById('login-form').classList.toggle('hidden-section', tab !== 'login');
-    document.getElementById('register-form').classList.toggle('hidden-section', tab !== 'register');
+    document.getElementById('login-form')?.classList.toggle('hidden-section', tab !== 'login');
+    document.getElementById('register-form')?.classList.toggle('hidden-section', tab !== 'register');
     document.getElementById('tab-login').className = tab === 'login' ? 'flex-1 py-2 text-sm font-bold text-emerald-600 border-b-2 border-emerald-600 transition' : 'flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition';
     document.getElementById('tab-register').className = tab === 'register' ? 'flex-1 py-2 text-sm font-bold text-blue-600 border-b-2 border-blue-600 transition' : 'flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition';
 }
 
 // --- AUTHENTICATION HANDLERS ---
-document.getElementById('login-form').addEventListener('submit', async (e) => {
+document.getElementById('login-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button');
     const originalText = btn.innerHTML;
@@ -83,7 +83,7 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     else await handleLoginSuccess(data.user);
 });
 
-document.getElementById('register-form').addEventListener('submit', async (e) => {
+document.getElementById('register-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('reg-email').value;
     const password = document.getElementById('reg-password').value;
@@ -101,8 +101,8 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
         if (authError) {
             if (authError.message.toLowerCase().includes('already registered') || authError.message.toLowerCase().includes('duplicate')) {
                 sessionStorage.setItem('reg_data', JSON.stringify({ email, password, nama, hp, alamat }));
-                document.getElementById('modal-confirm-overwrite').classList.remove('hidden-section');
-                document.getElementById('modal-confirm-overwrite').classList.add('active-section');
+                document.getElementById('modal-confirm-overwrite')?.classList.remove('hidden-section');
+                document.getElementById('modal-confirm-overwrite')?.classList.add('active-section');
                 document.getElementById('btn-confirm-overwrite').onclick = async () => await handleOverwriteUser(email, password, nama, hp, alamat);
             } else { alert('Gagal mendaftar: ' + authError.message); }
         } else {
@@ -121,13 +121,13 @@ async function handleOverwriteUser(email, password, nama, hp, alamat) {
         if (profileError) throw profileError;
         closeOverwriteModal();
         alert('Data berhasil diperbarui! Akun kembali ke status Pending.');
-        switchAuthTab('login'); document.getElementById('register-form').reset();
+        switchAuthTab('login'); document.getElementById('register-form')?.reset();
     } catch (err) { alert('Gagal menimpa data: ' + err.message); }
 }
 
 function closeOverwriteModal() {
-    document.getElementById('modal-confirm-overwrite').classList.add('hidden-section');
-    document.getElementById('modal-confirm-overwrite').classList.remove('active-section');
+    document.getElementById('modal-confirm-overwrite')?.classList.add('hidden-section');
+    document.getElementById('modal-confirm-overwrite')?.classList.remove('active-section');
     sessionStorage.removeItem('reg_data');
 }
 
@@ -185,7 +185,7 @@ function formatRupiah(a) { return new Intl.NumberFormat('id-ID', { style: 'curre
 
 // --- ADMIN FUNCTIONS ---
 async function loadAdminDashboard() {
-    document.getElementById('admin-dashboard').classList.remove('hidden-section');
+    document.getElementById('admin-dashboard')?.classList.remove('hidden-section');
     const { count } = await supabaseClient.from('bank_sampah').select('*', { count: 'exact', head: true }); document.getElementById('stat-total-bs').textContent = count || 0;
     loadTableBankSampah(); loadTableHargaOfftaker(); loadPendingUsersAdmin(); loadActiveUsersAdmin();
     loadPduData(); 
@@ -196,15 +196,15 @@ function switchAdminTab(t) {
     document.querySelectorAll('.admin-tab').forEach(b => { b.className = 'admin-tab border-transparent text-gray-500 whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm'; }); 
     event.currentTarget.className = 'admin-tab active-tab border-emerald-500 text-emerald-600 whitespace-nowrap py-3 px-1 border-b-2 font-bold text-sm'; 
     document.querySelectorAll('.admin-content').forEach(c => c.classList.add('hidden-section')); 
-    document.getElementById(`tab-${t}`).classList.remove('hidden-section'); 
+    document.getElementById(`tab-${t}`)?.classList.remove('hidden-section'); 
     sessionStorage.setItem('last_admin_tab', t); // SIMPAN TAB ADMIN
 } 
 
-async function loadTableBankSampah() { const { data } = await supabaseClient.from('bank_sampah').select('*').order('created_at', { ascending: false }); const tb = document.getElementById('table-bs-body'); tb.innerHTML = ''; (data||[]).forEach(r => tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${r.nama_bank}</td><td class="px-6 py-4 text-gray-600">${r.alamat||'-'}</td><td class="px-6 py-4 text-gray-600">${r.no_hp||'-'}</td></tr>`); }
+async function loadTableBankSampah() { const { data } = await supabaseClient.from('bank_sampah').select('*').order('created_at', { ascending: false }); const tb = document.getElementById('table-bs-body'); if(!tb) return; tb.innerHTML = ''; (data||[]).forEach(r => tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${r.nama_bank}</td><td class="px-6 py-4 text-gray-600">${r.alamat||'-'}</td><td class="px-6 py-4 text-gray-600">${r.no_hp||'-'}</td></tr>`); }
 
 async function loadTableHargaOfftaker() { 
     const { data } = await supabaseClient.from('harga_offtaker').select('*, jenis_sampah(nama_sampah)').is('bank_sampah_id', null).order('jenis_sampah(nama_sampah)'); 
-    const tb = document.getElementById('table-offtaker-body'); 
+    const tb = document.getElementById('table-offtaker-body'); if(!tb) return;
     tb.innerHTML = ''; 
     
     const thead = tb.parentElement.querySelector('thead tr');
@@ -247,7 +247,7 @@ async function loadPendingUsersAdmin() {
         .select('*') // HANYA SELECT *, JANGAN SELECT EMAIL
         .eq('role', 'pending');
 
-    const tb = document.getElementById('table-pending-admin'); 
+    const tb = document.getElementById('table-pending-admin'); if(!tb) return;
     tb.innerHTML = '';
 
     if (error) {
@@ -312,7 +312,7 @@ async function submitApproveUser() {
 }
 
 // --- INTEGRASI FORM BUAT AKUN MANUAL KE ACCOUNT-MANAGER.JS ---
-document.getElementById('form-create-user').addEventListener('submit', async (e) => {
+document.getElementById('form-create-user')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
     const originalText = btn.innerHTML;
@@ -453,11 +453,11 @@ async function editUserRole(userId) {
 
 // --- NASABAH FUNCTIONS ---
 async function loadNasabahDashboard() {
-    document.getElementById('nasabah-dashboard').classList.remove('hidden-section');
+    document.getElementById('nasabah-dashboard')?.classList.remove('hidden-section');
     const { data: nData } = await supabaseClient.from('nasabah').select('*').eq('profile_id', currentProfile.id).single();
     if(nData){document.getElementById('nasabah-nama').textContent=currentProfile.nama_lengkap;document.getElementById('nasabah-saldo-tabung').textContent=formatRupiah(nData.saldo_tabungan||0);}
     const { data: trx } = await supabaseClient.from('transaksi').select('*, jenis_sampah(nama_sampah, satuan)').eq('nasabah_id', nData?.id).order('tanggal_transaksi',{ascending:false});
-    const lc=document.getElementById('nasabah-riwayat-list'); lc.innerHTML=''; let tb=0;
+    const lc=document.getElementById('nasabah-riwayat-list'); if(!lc) return; lc.innerHTML=''; let tb=0;
     (trx||[]).forEach(t=>{tb+=t.berat_kg; lc.innerHTML+=`<div class="flex justify-between items-center p-4 bg-white rounded-xl border border-gray-100 shadow-sm"><div><p class="font-bold text-gray-900">${t.jenis_sampah?.nama_sampah}</p><p class="text-xs text-gray-500">${new Date(t.tanggal_transaksi).toLocaleDateString('id-ID')} • ${t.berat_kg} ${t.jenis_sampah?.satuan}</p></div><div class="text-right"><p class="font-bold text-emerald-700">${formatRupiah(t.total_harga)}</p><span class="text-[10px] px-2 py-0.5 rounded-full ${t.status_bayar==='dibayar'?'bg-green-100 text-green-700':'bg-yellow-100 text-yellow-700'}">${t.status_bayar==='dibayar'?'Dibayar':'Ditabung'}</span></div></div>`;});
     document.getElementById('nasabah-total-setor').textContent=tb.toFixed(1)+' Kg';
     
@@ -471,7 +471,7 @@ async function loadNasabahDashboard() {
 }
 
 // --- CHAT HELPER LOGIC ---
-function toggleChat() { document.getElementById('chat-window').classList.toggle('hidden-section'); }
+function toggleChat() { document.getElementById('chat-window')?.classList.toggle('hidden-section'); }
 function addChatMessage(text, isUser = false) {
     const container = document.getElementById('chat-messages');
     const div = document.createElement('div');
@@ -550,5 +550,5 @@ async function handleImportOfftaker(input){
     } catch(err) { alert('Error saat memproses file: ' + err.message); }
 }
 
-function toggleModal(id){document.getElementById(id).classList.toggle('hidden-section');}
+function toggleModal(id){document.getElementById(id)?.classList.toggle('hidden-section');}
 window.addEventListener('DOMContentLoaded', initApp);
