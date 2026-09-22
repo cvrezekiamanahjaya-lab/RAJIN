@@ -8,8 +8,6 @@
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS -->
@@ -17,7 +15,7 @@
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
 
-    <!-- ================= LOGIN & REGISTER PAGE ================= -->
+    <!-- LOGIN & REGISTER PAGE -->
     <div id="login-page" class="flex-grow flex items-center justify-center p-4 bg-gradient-to-br from-emerald-800 to-teal-900 relative overflow-hidden active-section">
         <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#ffffff 1px, transparent 1px); background-size: 30px 30px;"></div>
         
@@ -29,20 +27,17 @@
                 <div class="mt-3 inline-block px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100"><p class="text-[10px] text-emerald-700 font-semibold uppercase tracking-wide">Platform Bank Sampah Digital</p></div>
             </div>
 
-            <!-- Tab Switcher -->
             <div class="flex border-b border-gray-200 mb-6">
                 <button onclick="switchAuthTab('login')" id="tab-login" class="flex-1 py-2 text-sm font-bold text-emerald-600 border-b-2 border-emerald-600 transition">Masuk</button>
                 <button onclick="switchAuthTab('register')" id="tab-register" class="flex-1 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition">Daftar Akun Baru</button>
             </div>
 
-            <!-- Form Login -->
             <form id="login-form" class="space-y-4">
                 <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Email</label><input type="email" id="login-email" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="email@rajin.id"></div>
                 <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Password</label><input type="password" id="login-password" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50" placeholder="••••••••"></div>
                 <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-lg transition shadow-lg flex items-center justify-center gap-2"><span>Masuk Dashboard</span><i class="fas fa-arrow-right text-sm"></i></button>
             </form>
 
-            <!-- Form Register -->
             <form id="register-form" class="space-y-4 hidden-section">
                 <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">Nama Lengkap</label><input type="text" id="reg-nama" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50"></div>
                 <div><label class="block text-xs font-bold text-gray-600 uppercase mb-1 ml-1">No HP</label><input type="tel" id="reg-hp" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50"></div>
@@ -57,7 +52,7 @@
         </div>
     </div>
 
-    <!-- ================= HALAMAN PENDING ================= -->
+    <!-- HALAMAN PENDING -->
     <div id="pending-page" class="hidden-section flex-grow flex items-center justify-center p-4 bg-gray-100">
         <div class="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center chat-enter border-t-4 border-yellow-500">
             <div class="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-600 text-3xl"><i class="fas fa-hourglass-half"></i></div>
@@ -67,7 +62,7 @@
         </div>
     </div>
 
-    <!-- ================= MAIN APP DASHBOARD ================= -->
+    <!-- MAIN APP DASHBOARD -->
     <div id="app-container" class="hidden-section flex-grow flex flex-col">
         <nav class="bg-white shadow-md border-b border-gray-200 sticky top-0 z-30">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -178,7 +173,7 @@
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="text-lg font-bold text-gray-900">Manajemen User & Approval</h3>
                         <button onclick="openCreateUserModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 flex items-center gap-2 shadow-sm transition">
-                            <i class="fas fa-user-plus"></i> Tambah Akun Baru
+                            <i class="fas fa-user-plus"></i> Tambah Akun Manual
                         </button>
                     </div>
                     
@@ -300,7 +295,7 @@
         </footer>
     </div>
 
-    <!-- ================= CHAT HELPER FLOATING BUTTON ================= -->
+    <!-- CHAT HELPER FLOATING BUTTON -->
     <div class="fixed bottom-6 right-6 z-50">
         <div id="chat-window" class="hidden-section absolute bottom-16 right-0 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden chat-enter origin-bottom-right flex flex-col max-h-[500px]">
             <div class="bg-emerald-700 p-4 text-white flex justify-between items-center shrink-0">
@@ -314,7 +309,7 @@
             <div class="p-4 flex-grow overflow-y-auto bg-gray-50 space-y-4" id="chat-messages">
                 <div class="flex items-start gap-2">
                     <div class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center shrink-0"><i class="fas fa-robot text-emerald-600 text-xs"></i></div>
-                    <div class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-sm text-gray-700 border border-gray-100">Halo!  Saya siap membantu Anda menggunakan aplikasi RAJIN. Ada yang ingin ditanyakan?</div>
+                    <div class="bg-white p-3 rounded-2xl rounded-tl-none shadow-sm text-sm text-gray-700 border border-gray-100">Halo! 👋 Saya siap membantu Anda menggunakan aplikasi RAJIN. Ada yang ingin ditanyakan?</div>
                 </div>
             </div>
 
@@ -333,9 +328,7 @@
         </button>
     </div>
 
-    <!-- ================= MODALS ================= -->
-    
-    <!-- Modal Konfirmasi Overwrite (Register) -->
+    <!-- MODALS -->
     <div id="modal-confirm-overwrite" class="hidden-section fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 chat-enter border-t-4 border-yellow-500 text-center">
             <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-600 text-2xl"><i class="fas fa-exclamation-triangle"></i></div>
@@ -348,7 +341,6 @@
         </div>
     </div>
 
-    <!-- Modal Tambah Bank Sampah -->
     <div id="modal-add-bs" class="hidden-section fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 chat-enter border-t-4 border-emerald-600">
             <h3 class="text-lg font-bold mb-4">Tambah Bank Sampah</h3>
@@ -361,7 +353,6 @@
         </div>
     </div>
 
-    <!-- Modal Approve User (Admin Only) -->
     <div id="modal-approve-user" class="hidden-section fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 chat-enter border-t-4 border-blue-600">
             <h3 class="text-lg font-bold mb-4">Approve User</h3>
@@ -374,7 +365,6 @@
         </div>
     </div>
 
-    <!-- Modal Buat Akun Manual (Admin Only) -->
     <div id="modal-create-user" class="hidden-section fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 chat-enter border-t-4 border-blue-600">
             <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fas fa-user-shield text-blue-600"></i> Buat Akun Manual</h3>
@@ -401,6 +391,8 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="addon.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="account-manager.js"></script> <!-- LOAD MODULE AKUN DULU -->
+    <script src="addon.js"></script> <!-- BARU LOAD LOGIKA UTAMA -->
 </body>
 </html>
