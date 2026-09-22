@@ -1,43 +1,48 @@
 /**
- * PENGURUS MODULE
- * Menangani semua logika khusus untuk role Pengurus
- * Terintegrasi dengan addon.js dan account-manager.js
+ * PENGURUS MODULE - FINAL VERSION
+ * Menangani Dashboard Pengurus, Laporan, Stok, dan Cetak Dokumen
  */
 
 // --- LOAD DASHBOARD PENGURUS ---
 async function loadPengurusDashboard() {
-    document.getElementById('pengurus-dashboard').classList.remove('hidden-section');
+    console.log("Memuat Dashboard Pengurus..."); // Debugging
+    
+    document.getElementById('pengurus-dashboard')?.classList.remove('hidden-section');
     
     // 1. Load Info Bank Sampah
     const { data: bs } = await supabaseClient.from('bank_sampah').select('*').eq('id', currentProfile.bank_sampah_id).single();
-    document.getElementById('pengurus-nama-bs').textContent = bs?.nama_bank || 'Bank Sampah Saya';
+    if(document.getElementById('pengurus-nama-bs')) 
+        document.getElementById('pengurus-nama-bs').textContent = bs?.nama_bank || 'Bank Sampah Saya';
     
-    // 2. Load Total Tabungan Semua Nasabah di BS ini
+    // 2. Load Total Tabungan
     const { data: allNasabah } = await supabaseClient.from('nasabah').select('saldo_tabungan').eq('bank_sampah_id', currentProfile.bank_sampah_id);
     const totalTabungan = (allNasabah || []).reduce((sum, n) => sum + (n.saldo_tabungan || 0), 0);
-    document.getElementById('pengurus-total-tabungan').textContent = formatRupiah(totalTabungan);
+    if(document.getElementById('pengurus-total-tabungan'))
+        document.getElementById('pengurus-total-tabungan').textContent = formatRupiah(totalTabungan);
     
     // 3. Load & Tampilkan Harga Berlaku (Offtaker - 30%)
     const hargaListEl = document.getElementById('pengurus-harga-list');
-    if(hargaListEl) {
+    if(hargaListEl && jenisSampahList.length > 0) {
         hargaListEl.innerHTML = '';
-        const popularSampah = ['PLASTIK PUTIH (PP)', 'KARDUS', 'BESI', 'BOTOL BELING', 'ALUMINIUM PANCI'];
+        const popularSampah = ['PLASTIK', 'KARDUS', 'BESI', 'BOTOL', 'ALUMINIUM'];
         
         jenisSampahList.forEach(js => {
-            if (popularSampah.some(p => js.nama_sampah.includes(p))) {
+            if (popularSampah.some(p => js.nama_sampah.toUpperCase().includes(p))) {
                 const hargaOfftaker = hargaOfftakerMap[js.id] || 0;
-                const hargaNasabah = Math.round(hargaOfftaker * 0.7); // Kurangi 30%
+                const hargaNasabah = Math.round(hargaOfftaker * 0.7); 
                 hargaListEl.innerHTML += `
-                    <div class="bg-white/5 rounded p-1.5 border border-white/5">
-                        <p class="text-[9px] text-emerald-200 truncate">${js.nama_sampah}</p>
-                        <p class="font-bold text-white">${formatRupiah(hargaNasabah)}</p>
+                    <div class="bg-white/10 rounded p-2 border border-white/10">
+                        <p class="text-[9px] text-emerald-100 truncate">${js.nama_sampah}</p>
+                        <p class="font-bold text-white text-sm">${formatRupiah(hargaNasabah)}</p>
                     </div>
                 `;
             }
         });
+    } else if (hargaListEl) {
+        hargaListEl.innerHTML = '<span class="text-emerald-100 text-xs">Data harga belum tersedia.</span>';
     }
 
-    // 4. Load Pending Users (Approval Anggota)
+    // 4. Load Pending Users
     const { data: pending } = await supabaseClient.from('profiles').select('*').eq('role', 'pending').eq('bank_sampah_id', currentProfile.bank_sampah_id);
     const tb = document.getElementById('table-pending-pengurus'); 
     if(tb) {
@@ -51,7 +56,21 @@ async function loadPengurusDashboard() {
         }
     }
 
-    // 5. Load Dropdown Nasabah (Untuk Setor & Tarik)
+    // 5. Load Dropdowns
+    await loadDropdownsPengurus();
+    loadRecentTransactions();
+    
+    // Load data tab aktif jika bukan tab transaksi
+    const activeTabBtn = document.querySelector('.pengurus-tab.active-tab');
+    if(activeTabBtn) {
+        const tabName = activeTabBtn.getAttribute('onclick').match(/'([^']+)'/)[1];
+        if(tabName === 'stok') loadStokData();
+        if(tabName === 'laba-rugi') calculateLabaRugi();
+    }
+}
+
+async function loadDropdownsPengurus() {
+    // Nasabah
     const { data: nasabah } = await supabaseClient.from('nasabah').select('*, profiles(nama_lengkap)').eq('bank_sampah_id', currentProfile.bank_sampah_id);
     const selNSetor = document.getElementById('trx-nasabah'); 
     const selNTarik = document.getElementById('tarik-nasabah');
@@ -65,12 +84,11 @@ async function loadPengurusDashboard() {
         if(selNTarik) selNTarik.innerHTML += optHtml;
     });
 
-    // 6. Load Dropdown Jenis Sampah (DARI MASTER DATA) & Hitung Harga Nasabah
+    // Jenis Sampah dengan Harga
     const selJ = document.getElementById('trx-jenis'); 
-    if(selJ) {
+    if(selJ && jenisSampahList.length > 0) {
         selJ.innerHTML = '<option value="">-- Pilih Jenis Sampah --</option>';
         
-        // Load custom harga per BS jika ada (tabel harga_nasabah)
         const { data: hn } = await supabaseClient.from('harga_nasabah').select('*').eq('bank_sampah_id', currentProfile.bank_sampah_id);
         const hnm = {}; (hn||[]).forEach(h => hnm[h.jenis_sampah_id] = h);
 
@@ -79,29 +97,25 @@ async function loadPengurusDashboard() {
             const st = hnm[js.id];
             let fp = 0; 
             
-            // LOGIKA HARGA: Jika ada custom price pakai itu, jika tidak pakai Offtaker - 30%
             if(st) { 
                 if(st.mode_harga==='custom'){ fp=st.harga_custom; } 
                 else if(st.mode_harga==='offtaker'){ fp=hd; } 
                 else { fp=hd*(1-st.persentase/100); } 
             } else { 
-                fp = Math.round(hd * 0.7); // DEFAULT: Kurangi 30% dari harga off-taker
+                fp = Math.round(hd * 0.7); 
             }
             
             const opt = document.createElement('option'); 
             opt.value = js.id; 
-            opt.textContent = `${js.nama_sampah} (${formatRupiah(fp)})`; // Tampilkan harga di dropdown
+            opt.textContent = `${js.nama_sampah} (${formatRupiah(fp)})`; 
             opt.dataset.harga = fp; 
             opt.dataset.satuan = js.satuan || 'Kg'; 
             selJ.appendChild(opt);
         });
     }
-
-    await loadDropdownNasabahTarik();
-    loadRecentTransactions();
 }
 
-// --- FUNGSI DAFTAR NASABAH BARU (KHUSUS PENGURUS) ---
+// --- FUNGSI DAFTAR NASABAH BARU ---
 function openRegisterNasabahModal() {
     toggleModal('modal-register-nasabah');
 }
@@ -117,46 +131,32 @@ document.getElementById('form-register-nasabah')?.addEventListener('submit', asy
         const nama = document.getElementById('reg-nasabah-nama').value;
         const hp = document.getElementById('reg-nasabah-hp').value;
         const alamat = document.getElementById('reg-nasabah-alamat').value;
-        const email = document.getElementById('reg-nasabah-email').value || `nasabah_${Date.now()}@rajin.temp`; // Auto-generate email jika kosong
+        const email = document.getElementById('reg-nasabah-email').value || `nasabah_${Date.now()}@rajin.temp`;
         const password = document.getElementById('reg-nasabah-pass').value;
 
-        // 1. Buat Auth User
         const { data: authData, error: authError } = await supabaseClient.auth.signUp({
-            email: email,
-            password: password,
-            options: {
-                data: { nama_lengkap: nama, no_hp: hp, alamat: alamat }
-            }
+            email: email, password: password,
+            options: { data: { nama_lengkap: nama, no_hp: hp, alamat: alamat } }
         });
 
         if (authError) throw authError;
         const userId = authData.user.id;
 
-        // 2. Insert Profile (Role: nasabah, Status: active Langsung)
-        const { error: profileError } = await supabaseClient.from('profiles').insert({
-            id: userId,
-            role: 'nasabah', // LANGSUNG NASABAH, TIDAK PERLU APPROVE
-            status: 'active',
-            nama_lengkap: nama,
-            no_hp: hp,
-            alamat: alamat,
+        await supabaseClient.from('profiles').insert({
+            id: userId, role: 'nasabah', status: 'active',
+            nama_lengkap: nama, no_hp: hp, alamat: alamat,
             bank_sampah_id: currentProfile.bank_sampah_id
         });
 
-        if (profileError) throw profileError;
-
-        // 3. Insert ke Tabel Nasabah (Saldo 0)
         await supabaseClient.from('nasabah').insert({
-            profile_id: userId,
-            bank_sampah_id: currentProfile.bank_sampah_id,
-            saldo_tabungan: 0
+            profile_id: userId, bank_sampah_id: currentProfile.bank_sampah_id, saldo_tabungan: 0
         });
 
         alert(`✅ Nasabah "${nama}" berhasil didaftarkan!\n\nEmail: ${email}\nPassword: ${password}\n\n⚠️ PENTING: Jalankan script ini di SQL Editor agar user bisa login tanpa verifikasi email:\n\nUPDATE auth.users SET email_confirmed_at = NOW() WHERE id = '${userId}';`);
         
         toggleModal('modal-register-nasabah');
         e.target.reset();
-        loadPengurusDashboard(); // Refresh dropdown nasabah
+        loadPengurusDashboard(); 
         
     } catch (err) {
         alert('Gagal mendaftarkan nasabah: ' + err.message);
@@ -166,11 +166,11 @@ document.getElementById('form-register-nasabah')?.addEventListener('submit', asy
     }
 });
 
-// --- UPDATE PREVIEW HARGA SAAT INPUT SETOR ---
+// --- UPDATE PREVIEW HARGA ---
 function updateTrxPreview() { 
     const s = document.getElementById('trx-jenis'); 
     const b = parseFloat(document.getElementById('trx-berat').value) || 0; 
-    const o = s.options[s.selectedIndex]; 
+    const o = s?.options[s.selectedIndex]; 
     
     if(o && o.value){
         const harga = parseFloat(o.dataset.harga) || 0;
@@ -191,7 +191,7 @@ async function approveUserByPengurus(userId) {
     else { alert('Gagal: ' + result.message); }
 }
 
-// --- HELPER FUNCTIONS (Dipanggil dari addon.js saat init) ---
+// --- HELPER FUNCTIONS ---
 async function loadDropdownNasabahTarik() {
     const select = document.getElementById('tarik-nasabah'); 
     if(!select) return;
@@ -220,7 +220,7 @@ async function loadRecentTransactions() {
     });
 }
 
-// Event Listener Form Tarik Dana
+// Event Listeners Form
 document.getElementById('form-tarik')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const nasabahId = document.getElementById('tarik-nasabah').value;
@@ -235,7 +235,6 @@ document.getElementById('form-tarik')?.addEventListener('submit', async (e) => {
     loadPengurusDashboard();
 });
 
-// Event Listener Form Setor Sampah
 document.getElementById('form-setor')?.addEventListener('submit', async(e)=>{
     e.preventDefault(); 
     const ni=document.getElementById('trx-nasabah').value; const ji=document.getElementById('trx-jenis').value; const b=parseFloat(document.getElementById('trx-berat').value); 
@@ -254,7 +253,6 @@ document.getElementById('form-setor')?.addEventListener('submit', async(e)=>{
     else{alert('Berhasil!');e.target.reset();document.getElementById('trx-preview-total').textContent='Rp 0'; loadPengurusDashboard();}
 });
 
-// Fungsi Switch Tab Transaksi
 function switchTrxTab(tab) {
     const btnSetor = document.getElementById('tab-setor'); const btnTarik = document.getElementById('tab-tarik');
     const formSetor = document.getElementById('form-setor'); const formTarik = document.getElementById('form-tarik');
@@ -268,4 +266,136 @@ function switchTrxTab(tab) {
         formTarik.classList.remove('hidden-section'); formSetor.classList.add('hidden-section');
         loadDropdownNasabahTarik(); 
     }
+}
+
+// --- FUNGSI SWITCH TAB LAPORAN PENGURUS ---
+function switchPengurusTab(tabName) {
+    document.querySelectorAll('.pengurus-tab').forEach(t => {
+        t.classList.remove('active-tab', 'border-emerald-500', 'text-emerald-600', 'font-bold');
+        t.classList.add('border-transparent', 'text-gray-500', 'font-medium');
+    });
+    document.querySelectorAll('.pengurus-content').forEach(c => c.classList.add('hidden-section'));
+    
+    const activeBtn = document.querySelector(`button[onclick="switchPengurusTab('${tabName}')"]`);
+    if(activeBtn) {
+        activeBtn.classList.add('active-tab', 'border-emerald-500', 'text-emerald-600', 'font-bold');
+        activeBtn.classList.remove('border-transparent', 'text-gray-500', 'font-medium');
+    }
+    document.getElementById(`tab-${tabName}`)?.classList.remove('hidden-section');
+    
+    // Load data sesuai tab
+    if(tabName === 'stok') loadStokData();
+    if(tabName === 'laba-rugi') calculateLabaRugi();
+}
+
+// --- LOAD DATA STOK ---
+async function loadStokData() {
+    const periode = document.getElementById('filter-stok-periode')?.value || 'bulan';
+    let startDate = new Date();
+    if(periode === 'hari') startDate.setHours(0,0,0,0);
+    else if(periode === 'bulan') startDate.setDate(1);
+    else if(periode === 'tahun') { startDate.setMonth(0,1); startDate.setHours(0,0,0,0); }
+    
+    const { data: transaksi } = await supabaseClient
+        .from('transaksi')
+        .select('*, jenis_sampah(nama_sampah)')
+        .eq('bank_sampah_id', currentProfile.bank_sampah_id)
+        .gte('tanggal_transaksi', startDate.toISOString())
+        .order('tanggal_transaksi', {ascending: false});
+    
+    const stokMap = {};
+    (transaksi || []).forEach(t => {
+        const jsId = t.jenis_sampah_id;
+        if(!stokMap[jsId]) stokMap[jsId] = { nama: t.jenis_sampah?.nama_sampah, masuk: 0, keluar: 0 };
+        if(t.kategori_transaksi === 'beli') stokMap[jsId].masuk += t.berat_kg;
+        else if(t.kategori_transaksi === 'jual_pdu') stokMap[jsId].keluar += t.berat_kg;
+    });
+    
+    const tbody = document.getElementById('table-stok-body');
+    if(tbody) {
+        tbody.innerHTML = '';
+        Object.values(stokMap).forEach(s => {
+            tbody.innerHTML += `<tr><td class="px-4 py-3">${s.nama}</td><td class="px-4 py-3 text-right">${s.masuk.toFixed(2)}</td><td class="px-4 py-3 text-right">${s.keluar.toFixed(2)}</td><td class="px-4 py-3 text-right font-bold">${(s.masuk - s.keluar).toFixed(2)}</td></tr>`;
+        });
+    }
+}
+
+// --- HITUNG LABA RUGI ---
+async function calculateLabaRugi() {
+    const start = document.getElementById('lr-start-date')?.value;
+    const end = document.getElementById('lr-end-date')?.value;
+    
+    // Default bulan ini jika kosong
+    const d = new Date();
+    const defaultStart = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+    const defaultEnd = new Date().toISOString().split('T')[0];
+    
+    const startDate = start || defaultStart;
+    const endDate = end || defaultEnd;
+    
+    if(document.getElementById('lr-start-date')) document.getElementById('lr-start-date').value = startDate;
+    if(document.getElementById('lr-end-date')) document.getElementById('lr-end-date').value = endDate;
+
+    const { data: jual } = await supabaseClient.from('penjualan').select('total_pendapatan').eq('bank_sampah_id', currentProfile.bank_sampah_id).gte('tanggal_jual', startDate).lte('tanggal_jual', endDate);
+    const { data: beli } = await supabaseClient.from('transaksi').select('total_harga').eq('bank_sampah_id', currentProfile.bank_sampah_id).eq('kategori_transaksi', 'beli').gte('tanggal_transaksi', startDate).lte('tanggal_transaksi', endDate);
+    
+    const pendapatan = (jual || []).reduce((sum, j) => sum + j.total_pendapatan, 0);
+    const beban = (beli || []).reduce((sum, b) => sum + b.total_harga, 0);
+    const laba = pendapatan - beban;
+    
+    document.getElementById('lr-pendapatan').textContent = formatRupiah(pendapatan);
+    document.getElementById('lr-beban').textContent = formatRupiah(beban);
+    document.getElementById('lr-laba').textContent = formatRupiah(laba);
+}
+
+// --- EXPORT TO EXCEL ---
+function exportStokToExcel() {
+    const table = document.getElementById('table-stok');
+    if(!table) return;
+    const wb = XLSX.utils.table_to_book(table, {sheet: "Stok"});
+    XLSX.writeFile(wb, `Stok_Sampah_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+function exportLabaRugiToExcel() {
+    const data = [
+        ["Laporan Laba Rugi - " + (document.getElementById('pengurus-nama-bs')?.textContent || '')],
+        ["Periode", `${document.getElementById('lr-start-date')?.value} s/d ${document.getElementById('lr-end-date')?.value}`],
+        [],
+        ["Total Pendapatan", document.getElementById('lr-pendapatan')?.textContent],
+        ["Total Beban", document.getElementById('lr-beban')?.textContent],
+        ["Laba Bersih", document.getElementById('lr-laba')?.textContent]
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Laba Rugi");
+    XLSX.writeFile(wb, `Laba_Rugi_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+// --- MODAL CETAK DOKUMEN ---
+function openInvoiceModal(jenis) {
+    const modal = document.getElementById('modal-cetak-dokumen');
+    const title = document.getElementById('modal-dokumen-title');
+    const preview = document.getElementById('dokumen-preview-area');
+    
+    if(!modal || !title || !preview) return;
+    
+    let judulDokumen = "";
+    if(jenis === 'jual') judulDokumen = "Invoice Penjualan ke PDU";
+    else if(jenis === 'serah-terima') judulDokumen = "Surat Serah Terima Barang";
+    else if(jenis === 'kwitansi') judulDokumen = "Kwitansi Pembayaran";
+    
+    title.innerHTML = `<i class="fas fa-print text-blue-600"></i> ${judulDokumen}`;
+    preview.innerHTML = `
+        <div class="text-center">
+            <i class="fas fa-file-pdf text-4xl text-gray-300 mb-2"></i>
+            <p class="text-gray-500 text-sm">Fitur generate PDF otomatis sedang dikembangkan.</p>
+            <p class="text-xs text-gray-400 mt-2">Dokumen akan mencakup Kop Surat, Data Transaksi, dan TTD Digital.</p>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden-section');
+}
+
+function downloadDokumenPDF() {
+    alert("Fitur download PDF akan segera hadir! Saat ini silakan screenshot area preview.");
 }
