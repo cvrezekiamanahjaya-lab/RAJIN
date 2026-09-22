@@ -195,11 +195,36 @@
                 </div>
             </div>
 
-            <!-- PENGURUS DASHBOARD -->
+            <!-- PENGURUS DASHBOARD (LENGKAP DENGAN FITUR BARU) -->
             <div id="pengurus-dashboard" class="hidden-section space-y-6">
-                <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-lg flex justify-between items-center">
-                    <div><h2 class="text-xl font-bold" id="pengurus-nama-bs">Bank Sampah Saya</h2><p class="text-emerald-100 text-sm">Kelola Transaksi & Anggota</p></div>
-                    <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 text-right"><p class="text-xs text-emerald-100 uppercase font-bold">Total Tabungan Nasabah</p><h3 class="text-2xl font-bold" id="pengurus-total-tabungan">Rp 0</h3></div>
+                <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-lg flex justify-between items-center relative overflow-hidden">
+                    <!-- Decorative Background -->
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+                    
+                    <div class="relative z-10">
+                        <h2 class="text-xl font-bold" id="pengurus-nama-bs">Bank Sampah Saya</h2>
+                        <p class="text-emerald-100 text-sm mb-4">Kelola Transaksi & Anggota</p>
+                        
+                        <!-- INFO HARGA BERLAKU -->
+                        <div class="bg-white/10 backdrop-blur-md rounded-lg p-3 border border-white/10 max-w-md">
+                            <p class="text-[10px] text-emerald-200 uppercase font-bold mb-1">💰 Harga Berlaku Hari Ini (Estimasi)</p>
+                            <div class="grid grid-cols-3 gap-2 text-xs" id="pengurus-harga-list">
+                                <!-- Harga akan dimuat via JS -->
+                                <span class="text-emerald-100">Memuat...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative z-10 flex flex-col items-end gap-3">
+                        <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 text-right min-w-[200px]">
+                            <p class="text-xs text-emerald-100 uppercase font-bold">Total Tabungan Nasabah</p>
+                            <h3 class="text-2xl font-bold" id="pengurus-total-tabungan">Rp 0</h3>
+                        </div>
+                        <!-- TOMBOL DAFTAR NASABAH BARU -->
+                        <button onclick="openRegisterNasabahModal()" class="bg-white text-emerald-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-emerald-50 transition shadow-lg flex items-center gap-2">
+                            <i class="fas fa-user-plus"></i> Daftar Nasabah Baru
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -219,7 +244,13 @@
                                         <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Berat (<span id="trx-satuan-label">Kg</span>)</label><input type="number" id="trx-berat" step="0.01" class="w-full border rounded-lg p-2.5 text-sm" oninput="updateTrxPreview()" placeholder="0.00"></div>
                                         <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Status Bayar</label><select id="trx-status" class="w-full border rounded-lg p-2.5 text-sm bg-gray-50"><option value="ditabung">Ditabung</option><option value="dibayar">Langsung Dibayar</option></select></div>
                                     </div>
-                                    <div class="bg-emerald-50 p-4 rounded-lg flex justify-between items-center border border-emerald-100 mt-4"><span class="text-sm font-medium text-emerald-800">Estimasi Nilai:</span><span class="text-xl font-bold text-emerald-700" id="trx-preview-total">Rp 0</span></div>
+                                    <div class="bg-emerald-50 p-4 rounded-lg flex justify-between items-center border border-emerald-100 mt-4">
+                                        <div>
+                                            <span class="text-sm font-medium text-emerald-800 block">Estimasi Nilai (Harga Nasabah):</span>
+                                            <span class="text-[10px] text-emerald-600" id="trx-harga-detail">Harga Offtaker - 30%</span>
+                                        </div>
+                                        <span class="text-xl font-bold text-emerald-700" id="trx-preview-total">Rp 0</span>
+                                    </div>
                                     <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700 transition shadow-md"><i class="fas fa-save mr-2"></i>Simpan Transaksi Setor</button>
                                 </form>
 
@@ -295,6 +326,27 @@
         </footer>
     </div>
 
+    <!-- MODAL DAFTAR NASABAH BARU (KHUSUS PENGURUS) -->
+    <div id="modal-register-nasabah" class="hidden-section fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 chat-enter border-t-4 border-emerald-600">
+            <h3 class="text-lg font-bold mb-2 flex items-center gap-2"><i class="fas fa-user-plus text-emerald-600"></i> Daftarkan Nasabah Baru</h3>
+            <p class="text-xs text-gray-500 mb-4">Nasabah akan langsung aktif dan bisa setor sampah.</p>
+            <form id="form-register-nasabah" class="space-y-4">
+                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Lengkap</label><input type="text" id="reg-nasabah-nama" required class="w-full border rounded-lg p-2.5 text-sm"></div>
+                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">No HP / WhatsApp</label><input type="tel" id="reg-nasabah-hp" required class="w-full border rounded-lg p-2.5 text-sm"></div>
+                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Alamat</label><input type="text" id="reg-nasabah-alamat" required class="w-full border rounded-lg p-2.5 text-sm"></div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Email (Opsional)</label><input type="email" id="reg-nasabah-email" class="w-full border rounded-lg p-2.5 text-sm" placeholder="kosongkan jika tidak ada"></div>
+                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Password Default</label><input type="text" id="reg-nasabah-pass" value="nasabah123" required class="w-full border rounded-lg p-2.5 text-sm bg-gray-50"></div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="toggleModal('modal-register-nasabah')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Batal</button>
+                    <button type="submit" class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold">Daftarkan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- CHAT HELPER FLOATING BUTTON -->
     <div class="fixed bottom-6 right-6 z-50">
         <div id="chat-window" class="hidden-section absolute bottom-16 right-0 w-80 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden chat-enter origin-bottom-right flex flex-col max-h-[500px]">
@@ -317,82 +369,20 @@
                 <p class="text-[10px] text-gray-400 uppercase font-bold mb-2 tracking-wider">Topik Bantuan:</p>
                 <div class="flex flex-wrap gap-2">
                     <button onclick="askFaq('tutorial_setor')" class="text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full hover:bg-emerald-100 border border-emerald-200 transition font-medium"> Cara Setor</button>
-                    <button onclick="askFaq('update_harga')" class="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full hover:bg-blue-100 border border-blue-200 transition font-medium"> Cek Harga</button>
-                    <button onclick="askFaq('import_csv')" class="text-xs bg-purple-50 text-purple-700 px-3 py-1.5 rounded-full hover:bg-purple-100 border border-purple-200 transition font-medium">📥 Import CSV</button>
+                    <button onclick="askFaq('update_harga')" class="text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full hover:bg-emerald-100 border border-emerald-200 transition font-medium"> Cek Harga</button>
+                    <button onclick="askFaq('import_csv')" class="text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full hover:bg-emerald-100 border border-emerald-200 transition font-medium"> Import CSV</button>
                 </div>
             </div>
         </div>
-
-        <button onclick="toggleChat()" class="bg-emerald-600 hover:bg-emerald-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition transform hover:scale-110 hover:rotate-12 border-4 border-white">
+        <button onclick="toggleChat()" class="bg-emerald-600 hover:bg-emerald-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition transform hover:scale-105">
             <i class="fas fa-comment-dots text-2xl"></i>
         </button>
     </div>
 
-    <!-- MODALS -->
-    <div id="modal-confirm-overwrite" class="hidden-section fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 chat-enter border-t-4 border-yellow-500 text-center">
-            <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-600 text-2xl"><i class="fas fa-exclamation-triangle"></i></div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2">Akun Sudah Terdaftar?</h3>
-            <p class="text-sm text-gray-600 mb-6">Email ini sudah memiliki riwayat data. Apakah Anda yakin ingin menimpa data lama dan mengajukan persetujuan ulang?</p>
-            <div class="flex gap-3">
-                <button onclick="closeOverwriteModal()" class="flex-1 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition">Batal</button>
-                <button id="btn-confirm-overwrite" class="flex-1 py-2.5 bg-yellow-600 text-white rounded-lg font-bold hover:bg-yellow-700 transition shadow-md">Ya, Timpa Data</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-add-bs" class="hidden-section fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 chat-enter border-t-4 border-emerald-600">
-            <h3 class="text-lg font-bold mb-4">Tambah Bank Sampah</h3>
-            <form id="form-add-bs" class="space-y-4">
-                <input type="text" id="new-bs-nama" required placeholder="Nama Bank Sampah" class="w-full border rounded-lg p-2.5">
-                <input type="text" id="new-bs-alamat" placeholder="Alamat" class="w-full border rounded-lg p-2.5">
-                <input type="text" id="new-bs-hp" placeholder="No HP" class="w-full border rounded-lg p-2.5">
-                <div class="flex justify-end space-x-3 pt-4"><button type="button" onclick="toggleModal('modal-add-bs')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Batal</button><button type="submit" class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-bold">Simpan</button></div>
-            </form>
-        </div>
-    </div>
-
-    <div id="modal-approve-user" class="hidden-section fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 chat-enter border-t-4 border-blue-600">
-            <h3 class="text-lg font-bold mb-4">Approve User</h3>
-            <input type="hidden" id="approve-user-id">
-            <div class="space-y-4">
-                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Role</label><select id="approve-role" class="w-full border rounded-lg p-2.5"><option value="pengurus">Pengurus</option><option value="nasabah">Nasabah</option></select></div>
-                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Bank Sampah</label><select id="approve-bank" class="w-full border rounded-lg p-2.5"></select></div>
-                <div class="flex justify-end space-x-3 pt-4"><button type="button" onclick="toggleModal('modal-approve-user')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Batal</button><button onclick="submitApproveUser()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold">Approve</button></div>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-create-user" class="hidden-section fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 chat-enter border-t-4 border-blue-600">
-            <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i class="fas fa-user-shield text-blue-600"></i> Buat Akun Manual</h3>
-            <p class="text-xs text-gray-500 mb-4">Akun yang dibuat akan berstatus <b>PENDING</b> dan harus di-approve terlebih dahulu sebelum bisa login.</p>
-            <form id="form-create-user" class="space-y-4">
-                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Nama Lengkap</label><input type="text" id="new-user-nama" required class="w-full border rounded-lg p-2.5 text-sm"></div>
-                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label><input type="email" id="new-user-email" required class="w-full border rounded-lg p-2.5 text-sm"></div>
-                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Password Sementara</label><input type="text" id="new-user-pass" value="Rajin123!" required class="w-full border rounded-lg p-2.5 text-sm bg-gray-50"></div>
-                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Role</label>
-                    <select id="new-user-role" class="w-full border rounded-lg p-2.5 text-sm">
-                        <option value="pengurus">Pengurus</option>
-                        <option value="nasabah">Nasabah</option>
-                        <option value="admin">Admin</option>
-                    </select>
-                </div>
-                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Bank Sampah</label><select id="new-user-bs" class="w-full border rounded-lg p-2.5 text-sm"></select></div>
-                
-                <div class="flex justify-end space-x-3 pt-4">
-                    <button type="button" onclick="toggleModal('modal-create-user')" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Batal</button>
-                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold">Buat Akun</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- SCRIPTS -->
+    <!-- SCRIPTS (URUTAN PENTING!) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="account-manager.js"></script> <!-- LOAD MODULE AKUN DULU -->
-    <script src="addon.js"></script> <!-- BARU LOAD LOGIKA UTAMA -->
+    <script src="account-manager.js"></script>
+    <script src="pengurus.js"></script>
+    <script src="addon.js"></script>
 </body>
 </html>
