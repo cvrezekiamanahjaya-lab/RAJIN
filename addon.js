@@ -3,7 +3,12 @@ const SUPABASE_URL = 'https://woqifznkmbsjxelzhmjk.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_3iBnO0BYibh8Y8WJwXI0hg_X3iho_pj'; 
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-let currentUser = null, currentProfile = null, jenisSampahList = [], hargaOfftakerMap = {}; 
+
+// VARIABEL GLOBAL (Dipakai juga oleh pengurus.js)
+let currentUser = null;
+let currentProfile = null;
+let jenisSampahList = [];
+let hargaOfftakerMap = {}; 
 
 // --- FUNGSI MANAJEMEN STATE HALAMAN (AUTO REFRESH) ---
 function saveCurrentSection(sectionId) {
@@ -44,8 +49,11 @@ async function initApp() {
     
     if (session) {
         await handleLoginSuccess(session.user);
+        
+        // COBA RESTORE HALAMAN TERAKHIR SETELAH LOGIN SUKSES
         const restored = await restoreLastSection();
         if (!restored) {
+            // Jika tidak ada state tersimpan, tampilkan dashboard default berdasarkan role
             if (currentProfile.role === 'admin') showSection('admin-dashboard');
             else if (currentProfile.role === 'pengurus') showSection('pengurus-dashboard');
             else if (currentProfile.role === 'nasabah') showSection('nasabah-dashboard');
@@ -133,11 +141,14 @@ async function handleLoginSuccess(user) {
     currentProfile = profile;
     document.getElementById('user-name').textContent = profile.nama_lengkap;
     document.getElementById('user-role').textContent = profile.role;
+    
+    // WAJIB LOAD MASTER DATA DULU SEBELUM BUKA DASHBOARD
     await loadMasterData();
+    
     showSection('app-container');
     
     if (profile.role === 'admin') await loadAdminDashboard();
-    else if (profile.role === 'pengurus') await loadPengurusDashboard();
+    else if (profile.role === 'pengurus') await loadPengurusDashboard(); // Dipanggil dari pengurus.js
     else if (profile.role === 'nasabah') await loadNasabahDashboard();
 }
 
@@ -438,113 +449,6 @@ async function editUserRole(userId) {
     const result = await updateUserRole(userId, newRole.toLowerCase());
     if(result.success) { alert("Role berhasil diubah!"); loadActiveUsersAdmin(); }
     else { alert("Gagal ubah role: " + result.message); }
-}
-
-// --- PENGURUS FUNCTIONS ---
-async function loadPengurusDashboard() {
-    document.getElementById('pengurus-dashboard').classList.remove('hidden-section');
-    const { data: bs } = await supabaseClient.from('bank_sampah').select('*').eq('id', currentProfile.bank_sampah_id).single();
-    document.getElementById('pengurus-nama-bs').textContent = bs?.nama_bank || 'Bank Sampah Saya';
-    
-    const { data: pending } = await supabaseClient.from('profiles').select('*').eq('role', 'pending').eq('bank_sampah_id', currentProfile.bank_sampah_id);
-    const tb = document.getElementById('table-pending-pengurus'); tb.innerHTML = '';
-    (pending||[]).forEach(u => { tb.innerHTML += `<tr><td class="py-3 px-4 font-medium">${u.nama_lengkap}</td><td class="py-3 px-4 text-right"><button onclick="approveUserByPengurus('${u.id}')" class="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700">Accept</button></td></tr>`; });
-
-    const { data: nasabah } = await supabaseClient.from('nasabah').select('*, profiles(nama_lengkap)').eq('bank_sampah_id', currentProfile.bank_sampah_id);
-    const selN = document.getElementById('trx-nasabah'); selN.innerHTML = '<option value="">-- Pilih Nasabah --</option>';
-    (nasabah||[]).forEach(n => selN.innerHTML += `<option value="${n.id}">${n.profiles?.nama_lengkap}</option>`);
-
-    const selJ = document.getElementById('trx-jenis'); selJ.innerHTML = '<option value="">-- Pilih Sampah --</option>';
-    const { data: hn } = await supabaseClient.from('harga_nasabah').select('*').eq('bank_sampah_id', currentProfile.bank_sampah_id);
-    const hnm = {}; (hn||[]).forEach(h => hnm[h.jenis_sampah_id] = h);
-    
-    jenisSampahList.forEach(js => {
-        const hd = hargaOfftakerMap[js.id] || 0; const st = hnm[js.id];
-        let fp = 0; 
-        if(st) { if(st.mode_harga==='custom'){fp=st.harga_custom;} else if(st.mode_harga==='offtaker'){fp=hd;} else {fp=hd*(1-st.persentase/100);} } else { fp=hd*0.7; }
-        const opt = document.createElement('option'); opt.value=js.id; opt.textContent=js.nama_sampah; opt.dataset.harga=fp; opt.dataset.satuan=js.satuan; selJ.appendChild(opt);
-    });
-
-    await loadDropdownNasabahTarik();
-    loadRecentTransactions();
-}
-
-function switchTrxTab(tab) {
-    const btnSetor = document.getElementById('tab-setor'); const btnTarik = document.getElementById('tab-tarik');
-    const formSetor = document.getElementById('form-setor'); const formTarik = document.getElementById('form-tarik');
-    if (tab === 'setor') {
-        btnSetor.className = "flex-1 py-3 text-sm font-bold text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50/50";
-        btnTarik.className = "flex-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-700";
-        formSetor.classList.remove('hidden-section'); formTarik.classList.add('hidden-section');
-    } else {
-        btnTarik.className = "flex-1 py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 bg-blue-50/50";
-        btnSetor.className = "flex-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-700";
-        formTarik.classList.remove('hidden-section'); formSetor.classList.add('hidden-section');
-        loadDropdownNasabahTarik(); 
-    }
-}
-
-async function loadDropdownNasabahTarik() {
-    const select = document.getElementById('tarik-nasabah'); select.innerHTML = '<option value="">-- Pilih Nasabah --</option>';
-    const { data } = await supabaseClient.from('nasabah').select('*, profiles(nama_lengkap)').eq('bank_sampah_id', currentProfile.bank_sampah_id);
-    (data || []).forEach(n => { select.innerHTML += `<option value="${n.id}" data-saldo="${n.saldo_tabungan || 0}">${n.profiles?.nama_lengkap}</option>`; });
-}
-
-function loadSaldoNasabah() {
-    const select = document.getElementById('tarik-nasabah');
-    const selectedOpt = select.options[select.selectedIndex];
-    const saldo = selectedOpt ? parseFloat(selectedOpt.dataset.saldo) || 0 : 0;
-    document.getElementById('tarik-saldo-display').textContent = formatRupiah(saldo);
-}
-
-document.getElementById('form-tarik').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const nasabahId = document.getElementById('tarik-nasabah').value;
-    const nominal = parseFloat(document.getElementById('tarik-nominal').value);
-    if (!nasabahId || !nominal || nominal <= 0) { alert('Mohon lengkapi data penarikan!'); return; }
-    const { data: nData } = await supabaseClient.from('nasabah').select('saldo_tabungan').eq('id', nasabahId).single();
-    if (!nData || nData.saldo_tabungan < nominal) { alert('Saldo tidak mencukupi!'); return; }
-    
-    await supabaseClient.from('nasabah').update({ saldo_tabungan: nData.saldo_tabungan - nominal }).eq('id', nasabahId);
-    alert(`Penarikan ${formatRupiah(nominal)} berhasil!`);
-    e.target.reset(); document.getElementById('tarik-saldo-display').textContent = 'Rp 0';
-    loadPengurusDashboard();
-});
-
-async function approveUserByPengurus(userId) {
-    const result = await approveUserAccount(userId, 'nasabah', currentProfile.bank_sampah_id);
-    if(result.success) { alert('Nasabah berhasil di-accept!'); loadPengurusDashboard(); }
-    else { alert('Gagal: ' + result.message); }
-}
-
-function updateTrxPreview() { const s=document.getElementById('trx-jenis'); const b=parseFloat(document.getElementById('trx-berat').value)||0; const o=s.options[s.selectedIndex]; if(o&&o.value){document.getElementById('trx-preview-total').textContent=formatRupiah((parseFloat(o.dataset.harga)||0)*b);}else{document.getElementById('trx-preview-total').textContent='Rp 0';} }
-
-document.getElementById('form-setor').addEventListener('submit', async(e)=>{
-    e.preventDefault(); 
-    const ni=document.getElementById('trx-nasabah').value; const ji=document.getElementById('trx-jenis').value; const b=parseFloat(document.getElementById('trx-berat').value); 
-    if(!ni||!ji||!b){alert('Lengkapi data!');return;} 
-    const s=document.getElementById('trx-jenis'); const h=parseFloat(s.options[s.selectedIndex].dataset.harga); const t=h*b; 
-    const status = document.getElementById('trx-status').value;
-    
-    const {error}=await supabaseClient.from('transaksi').insert({bank_sampah_id:currentProfile.bank_sampah_id,nasabah_id:ni,jenis_sampah_id:ji,berat_kg:b,harga_saat_transaksi:h,total_harga:t,kategori_transaksi:'beli',status_bayar:status}); 
-    
-    if(status === 'ditabung' && !error) {
-        const { data: nData } = await supabaseClient.from('nasabah').select('saldo_tabungan').eq('id', ni).single();
-        await supabaseClient.from('nasabah').update({ saldo_tabungan: (nData?.saldo_tabungan || 0) + t }).eq('id', ni);
-    }
-
-    if(error)alert('Gagal: '+error.message); 
-    else{alert('Berhasil!');e.target.reset();document.getElementById('trx-preview-total').textContent='Rp 0'; loadPengurusDashboard();}
-});
-
-async function loadRecentTransactions() {
-    const container = document.getElementById('list-riwayat-transaksi'); container.innerHTML = '<div class="text-center text-xs text-gray-400 py-4">Memuat...</div>';
-    const { data } = await supabaseClient.from('transaksi').select('*, jenis_sampah(nama_sampah), nasabah(profiles(nama_lengkap))').eq('bank_sampah_id', currentProfile.bank_sampah_id).order('tanggal_transaksi', { ascending: false }).limit(10);
-    container.innerHTML = '';
-    if (!data || data.length === 0) { container.innerHTML = '<div class="text-center text-xs text-gray-400 py-4">Belum ada transaksi.</div>'; return; }
-    data.forEach(t => {
-        container.innerHTML += `<div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100 text-sm"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center shrink-0"><i class="fas fa-recycle text-xs"></i></div><div><p class="font-bold text-gray-800">${t.nasabah?.profiles?.nama_lengkap || 'Nasabah'}</p><p class="text-[10px] text-gray-500">${new Date(t.tanggal_transaksi).toLocaleDateString('id-ID')}</p></div></div><div class="text-right"><p class="font-bold text-emerald-600">${formatRupiah(t.total_harga)}</p><p class="text-[10px] text-gray-400">${t.jenis_sampah?.nama_sampah}</p></div></div>`;
-    });
 }
 
 // --- NASABAH FUNCTIONS ---
