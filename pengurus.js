@@ -152,7 +152,7 @@ document.getElementById('form-register-nasabah')?.addEventListener('submit', asy
             saldo_tabungan: 0
         });
 
-        alert(`✅ Nasabah "${nama}" berhasil didaftarkan!\n\nEmail: ${email}\nPassword: ${password}\n\n️ PENTING: Jalankan script ini di SQL Editor agar user bisa login tanpa verifikasi email:\n\nUPDATE auth.users SET email_confirmed_at = NOW() WHERE id = '${userId}';`);
+        alert(`✅ Nasabah "${nama}" berhasil didaftarkan!\n\nEmail: ${email}\nPassword: ${password}\n\n⚠️ PENTING: Jalankan script ini di SQL Editor agar user bisa login tanpa verifikasi email:\n\nUPDATE auth.users SET email_confirmed_at = NOW() WHERE id = '${userId}';`);
         
         toggleModal('modal-register-nasabah');
         e.target.reset();
@@ -189,4 +189,83 @@ async function approveUserByPengurus(userId) {
     const result = await approveUserAccount(userId, 'nasabah', currentProfile.bank_sampah_id);
     if(result.success) { alert('Nasabah berhasil di-accept!'); loadPengurusDashboard(); }
     else { alert('Gagal: ' + result.message); }
+}
+
+// --- HELPER FUNCTIONS (Dipanggil dari addon.js saat init) ---
+async function loadDropdownNasabahTarik() {
+    const select = document.getElementById('tarik-nasabah'); 
+    if(!select) return;
+    select.innerHTML = '<option value="">-- Pilih Nasabah --</option>';
+    const { data } = await supabaseClient.from('nasabah').select('*, profiles(nama_lengkap)').eq('bank_sampah_id', currentProfile.bank_sampah_id);
+    (data || []).forEach(n => { select.innerHTML += `<option value="${n.id}" data-saldo="${n.saldo_tabungan || 0}">${n.profiles?.nama_lengkap}</option>`; });
+}
+
+function loadSaldoNasabah() {
+    const select = document.getElementById('tarik-nasabah');
+    if(!select) return;
+    const selectedOpt = select.options[select.selectedIndex];
+    const saldo = selectedOpt ? parseFloat(selectedOpt.dataset.saldo) || 0 : 0;
+    document.getElementById('tarik-saldo-display').textContent = formatRupiah(saldo);
+}
+
+async function loadRecentTransactions() {
+    const container = document.getElementById('list-riwayat-transaksi'); 
+    if(!container) return;
+    container.innerHTML = '<div class="text-center text-xs text-gray-400 py-4">Memuat...</div>';
+    const { data } = await supabaseClient.from('transaksi').select('*, jenis_sampah(nama_sampah), nasabah(profiles(nama_lengkap))').eq('bank_sampah_id', currentProfile.bank_sampah_id).order('tanggal_transaksi', { ascending: false }).limit(10);
+    container.innerHTML = '';
+    if (!data || data.length === 0) { container.innerHTML = '<div class="text-center text-xs text-gray-400 py-4">Belum ada transaksi.</div>'; return; }
+    data.forEach(t => {
+        container.innerHTML += `<div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border border-gray-100 text-sm"><div class="flex items-center gap-3"><div class="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center shrink-0"><i class="fas fa-recycle text-xs"></i></div><div><p class="font-bold text-gray-800">${t.nasabah?.profiles?.nama_lengkap || 'Nasabah'}</p><p class="text-[10px] text-gray-500">${new Date(t.tanggal_transaksi).toLocaleDateString('id-ID')}</p></div></div><div class="text-right"><p class="font-bold text-emerald-600">${formatRupiah(t.total_harga)}</p><p class="text-[10px] text-gray-400">${t.jenis_sampah?.nama_sampah}</p></div></div>`;
+    });
+}
+
+// Event Listener Form Tarik Dana
+document.getElementById('form-tarik')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nasabahId = document.getElementById('tarik-nasabah').value;
+    const nominal = parseFloat(document.getElementById('tarik-nominal').value);
+    if (!nasabahId || !nominal || nominal <= 0) { alert('Mohon lengkapi data penarikan!'); return; }
+    const { data: nData } = await supabaseClient.from('nasabah').select('saldo_tabungan').eq('id', nasabahId).single();
+    if (!nData || nData.saldo_tabungan < nominal) { alert('Saldo tidak mencukupi!'); return; }
+    
+    await supabaseClient.from('nasabah').update({ saldo_tabungan: nData.saldo_tabungan - nominal }).eq('id', nasabahId);
+    alert(`Penarikan ${formatRupiah(nominal)} berhasil!`);
+    e.target.reset(); document.getElementById('tarik-saldo-display').textContent = 'Rp 0';
+    loadPengurusDashboard();
+});
+
+// Event Listener Form Setor Sampah
+document.getElementById('form-setor')?.addEventListener('submit', async(e)=>{
+    e.preventDefault(); 
+    const ni=document.getElementById('trx-nasabah').value; const ji=document.getElementById('trx-jenis').value; const b=parseFloat(document.getElementById('trx-berat').value); 
+    if(!ni||!ji||!b){alert('Lengkapi data!');return;} 
+    const s=document.getElementById('trx-jenis'); const h=parseFloat(s.options[s.selectedIndex].dataset.harga); const t=h*b; 
+    const status = document.getElementById('trx-status').value;
+    
+    const {error}=await supabaseClient.from('transaksi').insert({bank_sampah_id:currentProfile.bank_sampah_id,nasabah_id:ni,jenis_sampah_id:ji,berat_kg:b,harga_saat_transaksi:h,total_harga:t,kategori_transaksi:'beli',status_bayar:status}); 
+    
+    if(status === 'ditabung' && !error) {
+        const { data: nData } = await supabaseClient.from('nasabah').select('saldo_tabungan').eq('id', ni).single();
+        await supabaseClient.from('nasabah').update({ saldo_tabungan: (nData?.saldo_tabungan || 0) + t }).eq('id', ni);
+    }
+
+    if(error)alert('Gagal: '+error.message); 
+    else{alert('Berhasil!');e.target.reset();document.getElementById('trx-preview-total').textContent='Rp 0'; loadPengurusDashboard();}
+});
+
+// Fungsi Switch Tab Transaksi
+function switchTrxTab(tab) {
+    const btnSetor = document.getElementById('tab-setor'); const btnTarik = document.getElementById('tab-tarik');
+    const formSetor = document.getElementById('form-setor'); const formTarik = document.getElementById('form-tarik');
+    if (tab === 'setor') {
+        btnSetor.className = "flex-1 py-3 text-sm font-bold text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50/50";
+        btnTarik.className = "flex-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-700";
+        formSetor.classList.remove('hidden-section'); formTarik.classList.add('hidden-section');
+    } else {
+        btnTarik.className = "flex-1 py-3 text-sm font-bold text-blue-600 border-b-2 border-blue-600 bg-blue-50/50";
+        btnSetor.className = "flex-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-700";
+        formTarik.classList.remove('hidden-section'); formSetor.classList.add('hidden-section');
+        loadDropdownNasabahTarik(); 
+    }
 }
