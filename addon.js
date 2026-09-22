@@ -125,6 +125,7 @@ function closeOverwriteModal() {
 
 async function handleLoginSuccess(user) {
     currentUser = user;
+    // FIX: Select * saja, jangan select email karena tidak ada di profiles
     const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
     if (error || !profile) { alert('Error mengambil data profil.'); await doLogout(); return; }
     if (profile.role === 'pending') { showSection('pending-page'); return; }
@@ -228,11 +229,11 @@ async function editHargaManual(jenisId, namaSampah, hargaLama) {
     else { alert("Harga berhasil diubah!"); loadTableHargaOfftaker(); loadMasterData(); }
 }
 
-// FIX UTAMA: LOAD PENDING USERS DENGAN SELECT EMAIL YANG BENAR
+// FIX UTAMA: LOAD PENDING USERS TANPA SELECT EMAIL (KARENA TIDAK ADA DI PROFILES)
 async function loadPendingUsersAdmin() {
     const { data, error } = await supabaseClient
         .from('profiles')
-        .select('*, email') // Pastikan email ter-select
+        .select('*') // HANYA SELECT *, JANGAN SELECT EMAIL
         .eq('role', 'pending');
 
     const tb = document.getElementById('table-pending-admin'); 
@@ -250,10 +251,11 @@ async function loadPendingUsersAdmin() {
     }
 
     data.forEach(u => { 
+        // Email ditampilkan '-' karena tidak ada di tabel profiles
         tb.innerHTML += `
         <tr>
             <td class="px-6 py-4 font-bold">${u.nama_lengkap}</td>
-            <td class="px-6 py-4 text-gray-600">${u.email || '-'}</td>
+            <td class="px-6 py-4 text-gray-600">-</td> 
             <td class="px-6 py-4 text-gray-600">${u.no_hp||'-'}</td>
             <td class="px-6 py-4">
                 <button onclick="openApproveModal('${u.id}')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">Approve</button>
@@ -262,13 +264,14 @@ async function loadPendingUsersAdmin() {
     });
 }
 
+// FIX UTAMA: LOAD ACTIVE USERS TANPA SELECT EMAIL
 async function loadActiveUsersAdmin() {
-    const { data } = await supabaseClient.from('profiles').select('*, bank_sampah(nama_bank), email').neq('role', 'pending').order('created_at', {ascending: false});
+    const { data } = await supabaseClient.from('profiles').select('*, bank_sampah(nama_bank)').neq('role', 'pending').order('created_at', {ascending: false});
     const tb = document.getElementById('table-active-admin'); if(!tb) return;
     tb.innerHTML = '';
     if (!data || data.length === 0) { tb.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-400">Belum ada user aktif.</td></tr>'; return; }
     (data||[]).forEach(u => { 
-        tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${u.nama_lengkap}</td><td class="px-6 py-4"><span class="px-2 py-1 rounded text-xs font-bold ${u.role==='admin'?'bg-purple-100 text-purple-700':u.role==='pengurus'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.role.toUpperCase()}</span></td><td class="px-6 py-4 text-gray-600">${u.bank_sampah?.nama_bank || '-'}</td><td class="px-6 py-4"><button onclick="resetPasswordAdmin('${u.id}', '${u.email}')" class="text-blue-600 hover:text-blue-800 text-xs font-bold mr-2" title="Reset Password"><i class="fas fa-key"></i> Reset Pass</button><button onclick="editUserRole('${u.id}')" class="text-gray-600 hover:text-gray-800 text-xs font-bold" title="Edit Role"><i class="fas fa-edit"></i> Edit</button></td></tr>`; 
+        tb.innerHTML += `<tr><td class="px-6 py-4 font-bold">${u.nama_lengkap}</td><td class="px-6 py-4"><span class="px-2 py-1 rounded text-xs font-bold ${u.role==='admin'?'bg-purple-100 text-purple-700':u.role==='pengurus'?'bg-blue-100 text-blue-700':'bg-green-100 text-green-700'}">${u.role.toUpperCase()}</span></td><td class="px-6 py-4 text-gray-600">${u.bank_sampah?.nama_bank || '-'}</td><td class="px-6 py-4"><button onclick="resetPasswordAdmin('${u.id}')" class="text-blue-600 hover:text-blue-800 text-xs font-bold mr-2" title="Reset Password"><i class="fas fa-key"></i> Reset Pass</button><button onclick="editUserRole('${u.id}')" class="text-gray-600 hover:text-gray-800 text-xs font-bold" title="Edit Role"><i class="fas fa-edit"></i> Edit</button></td></tr>`; 
     });
 }
 
@@ -421,8 +424,8 @@ document.getElementById('admin-form-jual')?.addEventListener('submit', async (e)
 });
 
 // --- MANAJEMEN USER: RESET PASSWORD & EDIT ---
-async function resetPasswordAdmin(userId, email) {
-    const newPass = prompt(`Masukkan password baru untuk user ${email}:`, "Rajin123!");
+async function resetPasswordAdmin(userId) {
+    const newPass = prompt("Masukkan password baru untuk user ini:", "Rajin123!");
     if (!newPass) return;
     const sqlScript = getResetPasswordSQL(userId, newPass);
     alert(`⚠️ INSTRUKSI RESET PASSWORD MANUAL\n\nCopy script ini ke SQL Editor Supabase:\n\n${sqlScript}\n\nSetelah dijalankan, user bisa login dengan password baru.`);
