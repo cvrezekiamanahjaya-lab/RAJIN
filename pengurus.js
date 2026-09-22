@@ -1,9 +1,9 @@
 /**
- * PENGURUS MODULE - FINAL FIXED VERSION
- * Menangani Dashboard Pengurus, List Nasabah, Approval, dan Laporan
+ * PENGURUS MODULE - CRITICAL FIX VERSION
+ * Fix: Email Invalid, List Harga, Validasi Form
  */
 
-// --- LOAD DASHBOARD PENGURUS ---
+// --- LOAD DASHBOARD PENGURUS (FIX LIST HARGA) ---
 async function loadPengurusDashboard() {
     console.log("Memuat Dashboard Pengurus..."); 
     
@@ -20,12 +20,14 @@ async function loadPengurusDashboard() {
     if(document.getElementById('pengurus-total-tabungan'))
         document.getElementById('pengurus-total-tabungan').textContent = formatRupiah(totalTabungan);
     
-    // 3. Load & Tampilkan Harga Berlaku (Offtaker - 30%)
+    // 3. FIX: Load & Tampilkan Harga Berlaku (Offtaker - 30%)
+    // Pastikan jenisSampahList dan hargaOfftakerMap sudah terisi
     const hargaListEl = document.getElementById('pengurus-harga-list');
-    if(hargaListEl && jenisSampahList.length > 0) {
+    if(hargaListEl && Array.isArray(jenisSampahList) && jenisSampahList.length > 0) {
         hargaListEl.innerHTML = '';
         const popularSampah = ['PLASTIK', 'KARDUS', 'BESI', 'BOTOL', 'ALUMINIUM'];
         
+        let hasData = false;
         jenisSampahList.forEach(js => {
             if (popularSampah.some(p => js.nama_sampah.toUpperCase().includes(p))) {
                 const hargaOfftaker = hargaOfftakerMap[js.id] || 0;
@@ -36,13 +38,21 @@ async function loadPengurusDashboard() {
                         <p class="font-bold text-white text-sm">${formatRupiah(hargaNasabah)}</p>
                     </div>
                 `;
+                hasData = true;
             }
         });
+        
+        if(!hasData) {
+            hargaListEl.innerHTML = '<span class="text-emerald-100 text-xs">Belum ada data harga populer.</span>';
+        }
     } else if (hargaListEl) {
-        hargaListEl.innerHTML = '<span class="text-emerald-100 text-xs">Data harga belum tersedia.</span>';
+        // Jika master data belum load, tunggu sebentar lalu coba lagi
+        hargaListEl.innerHTML = '<span class="text-emerald-100 text-xs animate-pulse">Memuat data harga...</span>';
+        setTimeout(() => loadPengurusDashboard(), 1000); 
+        return; // Stop eksekusi sementara
     }
 
-    // 4. Load List Nasabah (Untuk Manage & Approve)
+    // 4. Load List Nasabah
     await loadNasabahListPengurus();
 
     // 5. Load Dropdowns untuk Form Transaksi
@@ -58,14 +68,137 @@ async function loadPengurusDashboard() {
     }
 }
 
-// --- LOAD LIST NASABAH UNTUK PENGURUS ---
+// --- FIX: DAFTAR NASABAH BARU (HANDLE EMAIL INVALID/DUPLICATE) ---
+document.getElementById('form-register-nasabah')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // VALIDASI FORM DASAR
+    const nama = document.getElementById('reg-nasabah-nama').value.trim();
+    const hp = document.getElementById('reg-nasabah-hp').value.trim();
+    const alamat = document.getElementById('reg-nasabah-alamat').value.trim();
+    let email = document.getElementById('reg-nasabah-email').value.trim();
+    const password = document.getElementById('reg-nasabah-pass').value;
+
+    if(!nama || !hp || !alamat) {
+        alert('Nama, No HP, dan Alamat wajib diisi!');
+        return;
+    }
+    if(password.length < 6) {
+        alert('Password minimal 6 karakter!');
+        return;
+    }
+
+    const btn = e.target.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Mendaftar...';
+    btn.disabled = true;
+
+    try {
+        // Generate email otomatis jika kosong
+        if (!email) {
+            email = `nasabah_${Date.now()}@rajin.temp`;
+        } else {
+            // Validasi format email sederhana
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if(!emailRegex.test(email)) {
+                throw new Error('Format email tidak valid!');
+            }
+        }
+
+        let userId;
+        let isNewUser = true;
+
+        // Coba signUp dulu
+        const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+            email: email,
+            password: password,
+            options: {
+                data: { nama_lengkap: nama, no_hp: hp, alamat: alamat }
+            }
+        });
+
+        if (authError) {
+            // Handle error "Email already registered" atau "Invalid email"
+            if (authError.message.toLowerCase().includes('already registered') || 
+                authError.message.toLowerCase().includes('invalid')) {
+                
+                console.log("Email sudah terdaftar, mencoba login untuk mendapatkan UID...");
+                
+                const { data: loginData, error: loginError } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (loginError) {
+                    // Jika login gagal, berarti password beda atau user belum confirmed
+                    throw new Error(`Email "${email}" sudah terdaftar tapi tidak bisa diakses. Silakan gunakan email lain atau hubungi Admin untuk reset password.`);
+                }
+
+                userId = loginData.user.id;
+                isNewUser = false;
+                
+                // Logout lagi biar session pengurus tetap aman
+                await supabaseClient.auth.signOut();
+                
+            } else {
+                throw authError;
+            }
+        } else {
+            userId = authData.user.id;
+        }
+
+        // Insert/Update Profile dengan bank_sampah_id milik pengurus
+        const { error: profileError } = await supabaseClient.from('profiles').upsert({
+            id: userId,
+            role: 'nasabah', 
+            status: 'active',
+            nama_lengkap: nama,
+            no_hp: hp,
+            alamat: alamat,
+            bank_sampah_id: currentProfile.bank_sampah_id 
+        }, { onConflict: 'id' });
+
+        if (profileError) throw profileError;
+
+        // Insert ke Tabel Nasabah (Saldo 0)
+        await supabaseClient.from('nasabah').upsert({
+            profile_id: userId,
+            bank_sampah_id: currentProfile.bank_sampah_id,
+            saldo_tabungan: 0
+        }, { onConflict: 'profile_id' });
+
+        let msg = `✅ Nasabah "${nama}" berhasil didaftarkan!\n\nEmail: ${email}\nPassword: ${password}`;
+        
+        if (isNewUser) {
+            msg += `\n\n⚠️ PENTING: Jalankan script ini di SQL Editor agar user bisa login tanpa verifikasi email:\n\nUPDATE auth.users SET email_confirmed_at = NOW() WHERE id = '${userId}';`;
+        }
+
+        alert(msg);
+        
+        toggleModal('modal-register-nasabah');
+        e.target.reset();
+        loadPengurusDashboard(); // Refresh list nasabah
+        
+    } catch (err) {
+        alert('Gagal mendaftarkan nasabah: ' + err.message);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+});
+
+// --- FUNGSI LAINNYA (TETAP SAMA SEPERTI SEBELUMNYA) ---
+
+function openRegisterNasabahModal() {
+    toggleModal('modal-register-nasabah');
+}
+
 async function loadNasabahListPengurus() {
     const container = document.getElementById('list-nasabah-pengurus');
     if(!container) return;
     
     container.innerHTML = '<div class="text-center text-xs text-gray-400 py-4">Memuat data nasabah...</div>';
     
-    // Ambil semua profile dengan role 'nasabah' atau 'pending' di bank sampah ini
     const { data: profiles } = await supabaseClient
         .from('profiles')
         .select('*')
@@ -73,7 +206,6 @@ async function loadNasabahListPengurus() {
         .in('role', ['nasabah', 'pending'])
         .order('created_at', { ascending: false });
     
-    // Ambil saldo tabungan untuk masing-masing nasabah
     const { data: nasababs } = await supabaseClient
         .from('nasabah')
         .select('profile_id, saldo_tabungan')
@@ -108,120 +240,14 @@ async function loadNasabahListPengurus() {
     });
 }
 
-// --- FUNGSI DAFTAR NASABAH BARU (FIXED) ---
-function openRegisterNasabahModal() {
-    toggleModal('modal-register-nasabah');
-}
-
-document.getElementById('form-register-nasabah')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = e.target.querySelector('button[type="submit"]');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Mendaftar...';
-    btn.disabled = true;
-
-    try {
-        const nama = document.getElementById('reg-nasabah-nama').value;
-        const hp = document.getElementById('reg-nasabah-hp').value;
-        const alamat = document.getElementById('reg-nasabah-alamat').value;
-        let email = document.getElementById('reg-nasabah-email').value.trim();
-        const password = document.getElementById('reg-nasabah-pass').value;
-
-        // Jika email kosong, generate otomatis
-        if (!email) {
-            email = `nasabah_${Date.now()}@rajin.temp`;
-        }
-
-        let userId;
-        let isNewUser = true;
-
-        // Coba signUp dulu
-        const { data: authData, error: authError } = await supabaseClient.auth.signUp({
-            email: email,
-            password: password,
-            options: {
-                data: { nama_lengkap: nama, no_hp: hp, alamat: alamat }
-            }
-        });
-
-        if (authError) {
-            // Jika error karena email sudah dipakai, coba login dulu buat dapetin UID
-            if (authError.message.toLowerCase().includes('already registered') || 
-                authError.message.toLowerCase().includes('invalid')) {
-                
-                const { data: loginData, error: loginError } = await supabaseClient.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
-
-                if (loginError) {
-                    // Kalau login juga gagal, berarti password beda atau user belum confirmed
-                    throw new Error(`Email "${email}" sudah terdaftar tapi tidak bisa diakses. Silakan gunakan email lain atau reset password via Admin.`);
-                }
-
-                userId = loginData.user.id;
-                isNewUser = false;
-                
-                // Logout lagi biar session pengurus tetap aman
-                await supabaseClient.auth.signOut();
-                
-            } else {
-                throw authError;
-            }
-        } else {
-            userId = authData.user.id;
-        }
-
-        // Insert/Update Profile
-        const { error: profileError } = await supabaseClient.from('profiles').upsert({
-            id: userId,
-            role: 'nasabah', // Langsung nasabah, tidak perlu approve
-            status: 'active',
-            nama_lengkap: nama,
-            no_hp: hp,
-            alamat: alamat,
-            bank_sampah_id: currentProfile.bank_sampah_id // ASSIGN OTOMATIS KE BANK SAMPAH PENGURUS
-        }, { onConflict: 'id' });
-
-        if (profileError) throw profileError;
-
-        // Insert ke Tabel Nasabah (Saldo 0)
-        await supabaseClient.from('nasabah').upsert({
-            profile_id: userId,
-            bank_sampah_id: currentProfile.bank_sampah_id,
-            saldo_tabungan: 0
-        }, { onConflict: 'profile_id' });
-
-        let msg = `✅ Nasabah "${nama}" berhasil didaftarkan!\n\nEmail: ${email}\nPassword: ${password}`;
-        
-        if (isNewUser) {
-            msg += `\n\n⚠️ PENTING: Jalankan script ini di SQL Editor agar user bisa login tanpa verifikasi email:\n\nUPDATE auth.users SET email_confirmed_at = NOW() WHERE id = '${userId}';`;
-        }
-
-        alert(msg);
-        
-        toggleModal('modal-register-nasabah');
-        e.target.reset();
-        loadPengurusDashboard(); // Refresh list nasabah
-        
-    } catch (err) {
-        alert('Gagal mendaftarkan nasabah: ' + err.message);
-    } finally {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    }
-});
-
-// --- RESET PASSWORD NASABAH OLEH PENGURUS ---
 async function resetPasswordNasabah(userId, nama) {
     const newPass = prompt(`Masukkan password baru untuk nasabah ${nama}:`, "nasabah123");
     if (!newPass) return;
     
     const sqlScript = getResetPasswordSQL(userId, newPass);
-    alert(`⚠️ INSTRUKSI RESET PASSWORD MANUAL\n\nCopy script ini ke SQL Editor Supabase:\n\n${sqlScript}\n\nSetelah dijalankan, nasabah bisa login dengan password baru.`);
+    alert(`️ INSTRUKSI RESET PASSWORD MANUAL\n\nCopy script ini ke SQL Editor Supabase:\n\n${sqlScript}\n\nSetelah dijalankan, nasabah bisa login dengan password baru.`);
 }
 
-// --- APPROVE USER OLEH PENGURUS ---
 async function approveUserByPengurus(userId) {
     const result = await approveUserAccount(userId, 'nasabah', currentProfile.bank_sampah_id);
     if(result.success) { 
@@ -232,9 +258,7 @@ async function approveUserByPengurus(userId) {
     }
 }
 
-// --- LOAD DROPDOWNS UNTUK FORM TRANSAKSI ---
 async function loadDropdownsPengurus() {
-    // Nasabah
     const { data: nasabah } = await supabaseClient.from('nasabah').select('*, profiles(nama_lengkap)').eq('bank_sampah_id', currentProfile.bank_sampah_id);
     const selNSetor = document.getElementById('trx-nasabah'); 
     const selNTarik = document.getElementById('tarik-nasabah');
@@ -248,9 +272,8 @@ async function loadDropdownsPengurus() {
         if(selNTarik) selNTarik.innerHTML += optHtml;
     });
 
-    // Jenis Sampah dengan Harga
     const selJ = document.getElementById('trx-jenis'); 
-    if(selJ && jenisSampahList.length > 0) {
+    if(selJ && Array.isArray(jenisSampahList) && jenisSampahList.length > 0) {
         selJ.innerHTML = '<option value="">-- Pilih Jenis Sampah --</option>';
         
         const { data: hn } = await supabaseClient.from('harga_nasabah').select('*').eq('bank_sampah_id', currentProfile.bank_sampah_id);
@@ -279,7 +302,6 @@ async function loadDropdownsPengurus() {
     }
 }
 
-// --- UPDATE PREVIEW HARGA ---
 function updateTrxPreview() { 
     const s = document.getElementById('trx-jenis'); 
     const b = parseFloat(document.getElementById('trx-berat').value) || 0; 
@@ -297,7 +319,6 @@ function updateTrxPreview() {
     }
 }
 
-// --- HELPER FUNCTIONS ---
 async function loadDropdownNasabahTarik() {
     const select = document.getElementById('tarik-nasabah'); 
     if(!select) return;
@@ -326,7 +347,6 @@ async function loadRecentTransactions() {
     });
 }
 
-// Event Listeners Form
 document.getElementById('form-tarik')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const nasabahId = document.getElementById('tarik-nasabah').value;
@@ -374,7 +394,6 @@ function switchTrxTab(tab) {
     }
 }
 
-// --- FUNGSI SWITCH TAB LAPORAN PENGURUS ---
 function switchPengurusTab(tabName) {
     document.querySelectorAll('.pengurus-tab').forEach(t => {
         t.classList.remove('active-tab', 'border-emerald-500', 'text-emerald-600', 'font-bold');
@@ -389,12 +408,10 @@ function switchPengurusTab(tabName) {
     }
     document.getElementById(`tab-${tabName}`)?.classList.remove('hidden-section');
     
-    // Load data sesuai tab
     if(tabName === 'stok') loadStokData();
     if(tabName === 'laba-rugi') calculateLabaRugi();
 }
 
-// --- LOAD DATA STOK ---
 async function loadStokData() {
     const periode = document.getElementById('filter-stok-periode')?.value || 'bulan';
     let startDate = new Date();
@@ -426,12 +443,10 @@ async function loadStokData() {
     }
 }
 
-// --- HITUNG LABA RUGI ---
 async function calculateLabaRugi() {
     const start = document.getElementById('lr-start-date')?.value;
     const end = document.getElementById('lr-end-date')?.value;
     
-    // Default bulan ini jika kosong
     const d = new Date();
     const defaultStart = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
     const defaultEnd = new Date().toISOString().split('T')[0];
@@ -454,7 +469,6 @@ async function calculateLabaRugi() {
     document.getElementById('lr-laba').textContent = formatRupiah(laba);
 }
 
-// --- EXPORT TO EXCEL ---
 function exportStokToExcel() {
     const table = document.getElementById('table-stok');
     if(!table) return;
@@ -477,7 +491,6 @@ function exportLabaRugiToExcel() {
     XLSX.writeFile(wb, `Laba_Rugi_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
-// --- MODAL CETAK DOKUMEN ---
 function openInvoiceModal(jenis) {
     const modal = document.getElementById('modal-cetak-dokumen');
     const title = document.getElementById('modal-dokumen-title');
