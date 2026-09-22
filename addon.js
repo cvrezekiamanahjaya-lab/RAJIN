@@ -131,7 +131,7 @@ function closeOverwriteModal() {
     sessionStorage.removeItem('reg_data');
 }
 
-// --- FIX UTAMA: HANDLE LOGIN SUCCESS DENGAN DOUBLE CHECK MASTER DATA ---
+// --- FIX UTAMA: HANDLE LOGIN SUCCESS TANPA PANGGIL loadPengurusDashboard() ---
 async function handleLoginSuccess(user) {
     currentUser = user;
     const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
@@ -148,23 +148,15 @@ async function handleLoginSuccess(user) {
     // Tampilkan container aplikasi
     showSection('app-container');
     
-    // LOGIC KHUSUS PENGURUS: Pastikan data master benar-benar siap
-    if (profile.role === 'pengurus') {
-        if(jenisSampahList.length > 0 && Object.keys(hargaOfftakerMap).length > 0) {
-            await loadPengurusDashboard();
-        } else {
-            // Kalau masih kosong (jarang terjadi), coba load lagi sekali
-            console.warn("Master data belum siap, mencoba reload...");
-            await loadMasterData();
-            await loadPengurusDashboard();
-        }
-    } 
-    else if (profile.role === 'admin') {
+    // LOGIC KHUSUS PENGURUS: Jangan panggil loadPengurusDashboard() di sini!
+    // Biarkan pengurus.js yang handle sendiri via event listener atau init
+    if (profile.role === 'admin') {
         await loadAdminDashboard();
     }
     else if (profile.role === 'nasabah') {
         await loadNasabahDashboard();
     }
+    // Untuk pengurus, dashboard akan di-load otomatis oleh pengurus.js setelah master data siap
 }
 
 async function doLogout() { 
@@ -558,7 +550,7 @@ async function handleImportOfftaker(input){
                 if(!error) successCount++; else errorCount++;
             } else { errorCount++; }
         }
-        let msg = `Import selesai!\n✅ Berhasil: ${successCount} data\n❌ Gagal/Skip: ${errorCount} data`;
+        let msg = `Import selesai!\n✅ Berhasil: ${successCount} data\n Gagal/Skip: ${errorCount} data`;
         if(errorCount > 0) msg += '\n\n(Cek apakah nama sampah di CSV sama dengan Master Data)';
         alert(msg);
         loadTableHargaOfftaker(); loadMasterData(); input.value = ''; 
