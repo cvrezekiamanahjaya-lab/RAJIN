@@ -8,7 +8,8 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 let currentUser = null;
 let currentProfile = null;
 let jenisSampahList = [];
-let hargaOfftakerMap = {}; 
+let hargaOfftakerMap = {}; // Harga Pusat/Default
+let settingMarginMap = {}; // Setting Margin Per Bank Sampah
 
 // --- FUNGSI MANAJEMEN STATE HALAMAN ---
 function saveCurrentSection(sectionId) {
@@ -128,7 +129,7 @@ function closeOverwriteModal() {
     sessionStorage.removeItem('reg_data');
 }
 
-// --- HANDLE LOGIN SUCCESS ---
+// --- HANDLE LOGIN SUCCESS & LOAD MASTER DATA ---
 async function handleLoginSuccess(user) {
     currentUser = user;
     const { data: profile, error } = await supabaseClient.from('profiles').select('*').eq('id', user.id).single();
@@ -173,10 +174,11 @@ function showSection(id) {
     } 
 }
 
+// --- FIX UTAMA: LOAD MASTER DATA + SETTING MARGIN ---
 async function loadMasterData() {
     console.log("Memuat master data...");
     
-    // Load jenis sampah
+    // 1. Load Jenis Sampah
     const { data: js, error: jsError } = await supabaseClient.from('jenis_sampah').select('*').order('nama_sampah');
     if(jsError) {
         console.error("Error loading jenis_sampah:", jsError);
@@ -186,24 +188,39 @@ async function loadMasterData() {
         console.log(`Loaded ${jenisSampahList.length} jenis sampah`);
     }
     
-    // Load harga off-taker - COBA TANPA FILTER bank_sampah_id DULU
+    // 2. Load Harga Off-taker Pusat (bank_sampah_id IS NULL)
     const { data: ho, error: hoError } = await supabaseClient.from('harga_offtaker').select('*');
     if(hoError) {
         console.error("Error loading harga_offtaker:", hoError);
         hargaOfftakerMap = {};
     } else {
         hargaOfftakerMap = {};
-        // Filter manual di JavaScript biar lebih aman
         (ho || []).forEach(h => {
-            // Hanya ambil yang bank_sampah_id-nya NULL atau kosong
-            if(!h.bank_sampah_id || h.bank_sampah_id === 'null') {
+            if(!h.bank_sampah_id) {
                 hargaOfftakerMap[h.jenis_sampah_id] = h.harga_per_kg;
             }
         });
-        console.log(`Loaded ${Object.keys(hargaOfftakerMap).length} harga off-taker`);
-        console.log("Harga map:", hargaOfftakerMap);
+        console.log(`Loaded ${Object.keys(hargaOfftakerMap).length} harga off-taker pusat`);
+    }
+
+    // 3. Load Setting Margin Pengurus (BARU!)
+    if(currentProfile?.bank_sampah_id) {
+        const { data: settings, error: setErr } = await supabaseClient
+            .from('setting_harga_pengurus')
+            .select('*')
+            .eq('bank_sampah_id', currentProfile.bank_sampah_id);
+            
+        if(setErr) console.error("Error loading settings:", setErr);
+        else {
+            settingMarginMap = {};
+            (settings || []).forEach(s => {
+                settingMarginMap[s.jenis_sampah_id] = s.margin_persen || 30;
+            });
+            console.log(`Loaded ${Object.keys(settingMarginMap).length} setting margin`);
+        }
     }
 }
+
 function formatRupiah(a) { return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(a); }
 
 // ==========================================
@@ -469,31 +486,8 @@ async function loadPengurusDashboard() {
     if(document.getElementById('pengurus-total-tabungan'))
         document.getElementById('pengurus-total-tabungan').textContent = formatRupiah(totalTabungan);
     
-    // 3. Load & Tampilkan Harga Berlaku
-    const hargaListEl = document.getElementById('pengurus-harga-list');
-    if(hargaListEl && Array.isArray(jenisSampahList) && jenisSampahList.length > 0) {
-        hargaListEl.innerHTML = '';
-        const popularSampah = ['PLASTIK', 'KARDUS', 'BESI', 'BOTOL', 'ALUMINIUM'];
-        let hasData = false;
-        jenisSampahList.forEach(js => {
-            if (popularSampah.some(p => js.nama_sampah.toUpperCase().includes(p))) {
-                const hargaOfftaker = hargaOfftakerMap[js.id] || 0;
-                const hargaNasabah = Math.round(hargaOfftaker * 0.7); 
-                hargaListEl.innerHTML += `
-                    <div class="bg-white/10 rounded p-2 border border-white/10">
-                        <p class="text-[9px] text-emerald-100 truncate">${js.nama_sampah}</p>
-                        <p class="font-bold text-white text-sm">${formatRupiah(hargaNasabah)}</p>
-                    </div>
-                `;
-                hasData = true;
-            }
-        });
-        if(!hasData) {
-            hargaListEl.innerHTML = '<span class="text-emerald-100 text-xs">Belum ada data harga populer.</span>';
-        }
-    } else if (hargaListEl) {
-        hargaListEl.innerHTML = '<span class="text-emerald-100 text-xs">Data master harga belum tersedia.</span>';
-    }
+    // 3. Load & Tampilkan Harga Dengan Margin
+    await loadAndDisplayHargaPengurus();
 
     // 4. Load List Nasabah
     await loadNasabahListPengurus();
@@ -501,6 +495,163 @@ async function loadPengurusDashboard() {
     // 5. Load Dropdowns
     await loadDropdownsPengurus();
     loadRecentTransactions();
+}
+
+// --- FUNGSI BARU: LOAD & DISPLAY HARGA DENGAN MARGIN ---
+async function loadAndDisplayHargaPengurus() {
+    const hargaListEl = document.getElementById('pengurus-harga-list');
+    if(!hargaListEl || !currentProfile?.bank_sampah_id) return;
+    
+    hargaListEl.innerHTML = '<span class="text-emerald-100 animate-pulse">Memuat data harga...</span>';
+    
+    // Load setting margin untuk bank sampah ini
+    const { data: settings } = await supabaseClient
+        .from('setting_harga_pengurus')
+        .select('*, jenis_sampah(nama_sampah)')
+        .eq('bank_sampah_id', currentProfile.bank_sampah_id);
+    
+    if(!settings || settings.length === 0) {
+        hargaListEl.innerHTML = '<span class="text-emerald-100 text-xs">Belum ada setting harga.</span>';
+        return;
+    }
+    
+    hargaListEl.innerHTML = '';
+    
+    // Urutkan berdasarkan nama sampah
+    settings.sort((a, b) => (a.jenis_sampah?.nama_sampah || '').localeCompare(b.jenis_sampah?.nama_sampah || ''));
+    
+    settings.forEach(s => {
+        const hargaOfftaker = hargaOfftakerMap[s.jenis_sampah_id] || 0;
+        const margin = s.margin_persen || 30;
+        const hargaNasabah = Math.round(hargaOfftaker * (1 - margin/100));
+        
+        hargaListEl.innerHTML += `
+        <div class="flex justify-between items-center bg-white/5 rounded p-2 border border-white/5">
+            <div class="flex-1">
+                <p class="text-[10px] text-emerald-200 truncate">${s.jenis_sampah?.nama_sampah || 'Unknown'}</p>
+                <p class="text-[9px] text-emerald-300/70">Offtaker: ${formatRupiah(hargaOfftaker)}</p>
+            </div>
+            <div class="text-right">
+                <p class="font-bold text-white text-sm">${formatRupiah(hargaNasabah)}</p>
+                <p class="text-[9px] text-emerald-300/70">Margin: ${margin}%</p>
+            </div>
+        </div>
+        `;
+    });
+}
+
+// --- MODAL EDIT MARGIN ---
+function openEditMarginModal() {
+    toggleModal('modal-edit-margin');
+    loadEditMarginList();
+}
+
+async function loadEditMarginList() {
+    const container = document.getElementById('edit-margin-list');
+    if(!container) return;
+    
+    container.innerHTML = '<div class="text-center text-xs text-gray-400 py-4">Memuat...</div>';
+    
+    const { data: settings } = await supabaseClient
+        .from('setting_harga_pengurus')
+        .select('*, jenis_sampah(nama_sampah)')
+        .eq('bank_sampah_id', currentProfile.bank_sampah_id)
+        .order('jenis_sampah(nama_sampah)');
+    
+    if(!settings || settings.length === 0) {
+        container.innerHTML = '<div class="text-center text-xs text-gray-400 py-4">Tidak ada data.</div>';
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    settings.forEach(s => {
+        const hargaOfftaker = hargaOfftakerMap[s.jenis_sampah_id] || 0;
+        const margin = s.margin_persen || 30;
+        const hargaNasabah = Math.round(hargaOfftaker * (1 - margin/100));
+        
+        container.innerHTML += `
+        <div class="border rounded-lg p-3 bg-gray-50">
+            <div class="flex justify-between items-center mb-2">
+                <p class="font-bold text-sm text-gray-800">${s.jenis_sampah?.nama_sampah || 'Unknown'}</p>
+                <p class="text-xs text-gray-500">Offtaker: ${formatRupiah(hargaOfftaker)}</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="flex-1">
+                    <label class="block text-[10px] text-gray-500 uppercase mb-1">Margin (%)</label>
+                    <input type="number" 
+                           id="margin-${s.jenis_sampah_id}" 
+                           value="${margin}" 
+                           min="0" 
+                           max="100" 
+                           step="1"
+                           class="w-full border rounded p-2 text-sm"
+                           onchange="previewHargaNasabah('${s.jenis_sampah_id}', ${hargaOfftaker})">
+                </div>
+                <div class="text-right min-w-[100px]">
+                    <label class="block text-[10px] text-gray-500 uppercase mb-1">Harga Nasabah</label>
+                    <p class="font-bold text-emerald-700" id="preview-${s.jenis_sampah_id}">${formatRupiah(hargaNasabah)}</p>
+                </div>
+            </div>
+        </div>
+        `;
+    });
+}
+
+function previewHargaNasabah(jenisId, hargaOfftaker) {
+    const marginInput = document.getElementById(`margin-${jenisId}`);
+    const previewEl = document.getElementById(`preview-${jenisId}`);
+    if(!marginInput || !previewEl) return;
+    
+    const margin = parseFloat(marginInput.value) || 0;
+    const hargaNasabah = Math.round(hargaOfftaker * (1 - margin/100));
+    previewEl.textContent = formatRupiah(hargaNasabah);
+}
+
+async function saveMarginSettings() {
+    const inputs = document.querySelectorAll('[id^="margin-"]');
+    if(inputs.length === 0) { alert('Tidak ada data untuk disimpan.'); return; }
+    
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Menyimpan...';
+    btn.disabled = true;
+    
+    try {
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for(const input of inputs) {
+            const jenisId = input.id.replace('margin-', '');
+            const margin = parseFloat(input.value) || 0;
+            
+            if(margin < 0 || margin > 100) {
+                errorCount++;
+                continue;
+            }
+            
+            const { error } = await supabaseClient
+                .from('setting_harga_pengurus')
+                .update({ margin_persen: margin, updated_at: new Date().toISOString() })
+                .eq('bank_sampah_id', currentProfile.bank_sampah_id)
+                .eq('jenis_sampah_id', jenisId);
+            
+            if(error) errorCount++;
+            else successCount++;
+        }
+        
+        alert(`✅ Berhasil disimpan!\n\n✅ Update: ${successCount} data\n Gagal: ${errorCount} data`);
+        
+        toggleModal('modal-edit-margin');
+        loadAndDisplayHargaPengurus(); // Refresh tampilan harga
+        loadDropdownsPengurus(); // Refresh dropdown transaksi
+        
+    } catch(err) {
+        alert('Gagal menyimpan: ' + err.message);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
 }
 
 async function loadNasabahListPengurus() {
@@ -641,12 +792,16 @@ async function loadDropdownsPengurus() {
     const selJ = document.getElementById('trx-jenis'); 
     if(selJ && Array.isArray(jenisSampahList) && jenisSampahList.length > 0) {
         selJ.innerHTML = '<option value="">-- Pilih Jenis Sampah --</option>';
-        const { data: hn } = await supabaseClient.from('harga_nasabah').select('*').eq('bank_sampah_id', currentProfile.bank_sampah_id);
-        const hnm = {}; (hn||[]).forEach(h => hnm[h.jenis_sampah_id] = h);
+        
+        // Ambil setting margin terbaru dari DB atau cache
+        const { data: hn } = await supabaseClient.from('setting_harga_pengurus').select('*').eq('bank_sampah_id', currentProfile.bank_sampah_id);
+        const localMarginMap = {}; (hn||[]).forEach(h => localMarginMap[h.jenis_sampah_id] = h.margin_persen);
+
         jenisSampahList.forEach(js => {
-            const hd = hargaOfftakerMap[js.id] || 0; const st = hnm[js.id]; let fp = 0;
-            if(st) { if(st.mode_harga==='custom') fp=st.harga_custom; else if(st.mode_harga==='offtaker') fp=hd; else fp=hd*(1-st.persentase/100); }
-            else fp = Math.round(hd * 0.7);
+            const hd = hargaOfftakerMap[js.id] || 0; 
+            const margin = localMarginMap[js.id] || 30; // Default 30% kalau belum diset
+            const fp = Math.round(hd * (1 - margin/100));
+            
             const opt = document.createElement('option'); opt.value = js.id;
             opt.textContent = `${js.nama_sampah} (${formatRupiah(fp)})`;
             opt.dataset.harga = fp; opt.dataset.satuan = js.satuan || 'Kg';
@@ -665,7 +820,7 @@ function updateTrxPreview() {
         document.getElementById('trx-satuan-label').textContent = o.dataset.satuan || 'Kg';
     } else {
         document.getElementById('trx-preview-total').textContent = 'Rp 0';
-        document.getElementById('trx-harga-detail').textContent = 'Harga Offtaker - 30%';
+        document.getElementById('trx-harga-detail').textContent = 'Harga Offtaker - Margin';
     }
 }
 
