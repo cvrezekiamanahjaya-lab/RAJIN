@@ -1,6 +1,6 @@
 /**
- * ACCOUNT MANAGER MODULE (FINAL FIXED VERSION)
- * Menangani pembuatan akun manual, approval, dan reset password
+ * ACCOUNT MANAGER MODULE (ULTRA FINAL VERSION)
+ * Menangani pembuatan akun manual tanpa error Foreign Key
  */
 
 // Fungsi Utama: Membuat Akun Manual (Auth + Profile)
@@ -9,51 +9,51 @@ async function createManualAccount(email, password, nama, role, bankId) {
         let userId;
         let isNewUser = false;
 
-        // LANGKAH 1: Coba SignUp dulu
-        const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+        // LANGKAH 1: Cek apakah user sudah ada di auth.users
+        // Kita coba login dulu. Kalau berhasil, berarti user sudah ada.
+        const { data: loginData, error: loginError } = await supabaseClient.auth.signInWithPassword({
             email: email,
-            password: password,
-            options: {
-                data: { 
-                    nama_lengkap: nama, 
-                    role: role, 
-                    bank_sampah_id: bankId 
-                },
-                emailRedirectTo: window.location.origin 
-            }
+            password: password
         });
 
-        if (authError) {
-            // Jika error karena user sudah terdaftar
-            if (authError.message.toLowerCase().includes('already registered') || 
-                authError.message.toLowerCase().includes('duplicate')) {
-                
-                // Login dulu buat dapetin UID user lama
-                const { data: loginData, error: loginError } = await supabaseClient.auth.signInWithPassword({
-                    email: email,
-                    password: password
-                });
+        if (!loginError && loginData.user) {
+            // User sudah ada, pakai ID-nya
+            userId = loginData.user.id;
+            isNewUser = false;
+            
+            // Logout lagi biar session admin tetap aman
+            await supabaseClient.auth.signOut();
+        } else {
+            // User belum ada, buat baru via signUp
+            const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                email: email,
+                password: password,
+                options: {
+                    data: { 
+                        nama_lengkap: nama, 
+                        role: role, 
+                        bank_sampah_id: bankId 
+                    },
+                    emailRedirectTo: window.location.origin 
+                }
+            });
 
-                if (loginError) {
-                    return { 
+            if (authError) {
+                // Jika error duplicate meski login gagal (kasus edge)
+                if (authError.message.toLowerCase().includes('already registered')) {
+                     return { 
                         success: false, 
-                        message: `⚠️ User ${email} sudah ada tapi password salah atau belum confirmed.\n\nSilakan jalankan script ini di SQL Editor:\n\nUPDATE auth.users SET encrypted_password = crypt('${password}', gen_salt('bf')), email_confirmed_at = NOW() WHERE email = '${email}';\n\nSetelah itu coba buat akun lagi.` 
+                        message: `⚠️ Email ${email} sudah terdaftar tapi password salah.\n\nSilakan reset password via SQL Editor atau gunakan password yang benar.` 
                     };
                 }
-
-                userId = loginData.user.id;
-                isNewUser = false;
-                
-                // Logout lagi biar session admin tetap aman
-                await supabaseClient.auth.signOut();
-                
-            } else {
                 throw authError;
             }
-        } else {
-            // User baru berhasil dibuat
+
             userId = authData.user.id;
             isNewUser = true;
+            
+            // TUNGGU 2 DETIK biar Supabase selesai proses auth & trigger
+            await new Promise(resolve => setTimeout(resolve, 2000));
         }
 
         // LANGKAH 2: Konfirmasi Email (Jika user baru)
@@ -62,34 +62,27 @@ async function createManualAccount(email, password, nama, role, bankId) {
             sqlNote = `\n\n️ AGAR USER BISA LANGSUNG LOGIN TANPA VERIFIKASI EMAIL:\nSilakan jalankan script ini di SQL Editor Supabase:\n\nUPDATE auth.users SET email_confirmed_at = NOW() WHERE email = '${email}';`;
         }
 
-        // LANGKAH 3: PASTIKAN PROFILE ADA & BERSTATUS PENDING
-        const { data: existingProfile } = await supabaseClient
-            .from('profiles')
-            .select('id')
-            .eq('id', userId)
-            .single();
+        // LANGKAH 3: UPSERT PROFILE (Insert atau Update jika sudah ada)
+        // Gunakan upsert dengan onConflict untuk menghindari error duplicate
+        const { error: profileError } = await supabaseClient.from('profiles').upsert({
+            id: userId,
+            role: 'pending',
+            status: 'active',
+            nama_lengkap: nama,
+            no_hp: '-',
+            alamat: '-',
+            bank_sampah_id: bankId || null
+        }, {
+            onConflict: 'id' // Jika ID sudah ada, update saja jangan insert baru
+        });
 
-        if (!existingProfile) {
-            // Insert profile baru
-            const { error: profileError } = await supabaseClient.from('profiles').insert({
-                id: userId,
-                role: 'pending',
-                status: 'active',
-                nama_lengkap: nama,
-                no_hp: '-',
-                alamat: '-',
-                bank_sampah_id: bankId || null
-            });
-            if (profileError) throw profileError;
-        } else {
-            // Update profile jika sudah ada
-            const { error: updateError } = await supabaseClient.from('profiles').update({
-                role: 'pending',
-                status: 'active',
-                nama_lengkap: nama,
-                bank_sampah_id: bankId || null
-            }).eq('id', userId);
-            if (updateError) throw updateError;
+        if (profileError) {
+            // Jika masih error foreign key, berarti RLS memblokir
+            // Kita kasih instruksi SQL manual sebagai fallback
+            return {
+                success: false,
+                message: `⚠️ Gagal insert profile otomatis (kemungkinan diblokir RLS).\n\nSilakan jalankan script ini di SQL Editor Supabase untuk membuat profile manual:\n\nINSERT INTO profiles (id, role, status, nama_lengkap, no_hp, alamat, bank_sampah_id)\nVALUES ('${userId}', 'pending', 'active', '${nama}', '-', '-', ${bankId ? `'${bankId}'` : 'NULL'})\nON CONFLICT (id) DO UPDATE SET role = 'pending', status = 'active', nama_lengkap = '${nama}';${sqlNote}`
+            };
         }
 
         return { 
